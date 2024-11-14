@@ -24,7 +24,7 @@ ofxXmlSettings (included in Of Core)
 - Help
 - Drag and drop de contenidos en las superficies
 - Entrada por NDI
-- Shaders filters
+- Filtros por Shaders
 
 ## PRE RELEASES ##
 [Binaries / ejecutables](https://github.com/matiasrc/BBlobTracker-lite/releases/tag/v.0.1) OSX y WIN
