@@ -151,6 +151,8 @@ void ofApp::drawGui() {
             ImGui::EndMenu();
         }
         
+        /*
+        
         // Nuevo menú de ayuda
         if (ImGui::BeginMenu("|Ayuda|"))
         {
@@ -184,7 +186,7 @@ void ofApp::drawGui() {
                         "Modificar superficies:\n"
                         "ocultar o ver capas: l\n"
                         
-                        /*
+                        
                         "Agrandar superficie seleccionada: +\n"
                         "Achicar superficie seleccionada: -\n"
                             
@@ -219,13 +221,14 @@ void ofApp::drawGui() {
                         "/superficie1 stop\n"
                         "/superficie1 pause\n"
                         "/superficie1 resume \n"
-                         */
+                         
                         );
             if (ImGui::Button("Cerrar")) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
+        */
         
         ImGui::EndMainMenuBar();
     }
