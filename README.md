@@ -14,7 +14,7 @@ ofxXmlSettings (included in Of Core)
 
 [ofxSyphon] (https://github.com/astellato/ofxSyphon)
 
-[ofxImGui](https://github.com/jvcleave/ofxImGui)
+[ofxImGui] (https://github.com/jvcleave/ofxImGui)
 
 [ofxPiMapper fork] (https://github.com/matiasrc/ofxPiMapper/tree/main) 
 
