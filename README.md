@@ -20,14 +20,15 @@ ofxXmlSettings (included in Of Core)
 
 
 ## Ayuda ##
-# MODOS #
+
+### MODOS ###
                         
 Modo Edición (Control / Cmd + e): Cambia de modo para poder crear, editar superficies y definir su contenido.\n\n"
                         
-# CONTENIDOS #
+### CONTENIDOS ###
 Para agregar contenidos, ubicarlos en la carpeta 'data/fuentes'. Se pueden agregar imágenes (jpg, png, bmp, gif), videos (mov, mp4, avi), secuencias de PNG con transparencia, sonidos (wav, mp3, aiff, aif).
 
-# ACCESO RÁPIDO DE TECLADO #
+### ACCESO RÁPIDO DE TECLADO ###
 Modo edición: ctrl / cmd + e
 Guardar: ctrl / cmd + s
 Deshacer: ctrl / cmd + z
@@ -55,7 +56,7 @@ Crear superficie grilla: g
 Duplicar superficie: d
 Borrar superficie: backspace
                         
-# CONTROL DE CONTENIDOS #
+### CONTROL DE CONTENIDOS ###
 Tanto los videos como las secuencias de png se pueden ejecutar con los comandos: play, stop, pause y resume, tanto desde el menú de cada superficie como desde afuera a través de mensajes OSC.
 También se pueden reproducir (play) a partir de una tecla del teclado.
                         
