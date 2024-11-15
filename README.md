@@ -1,5 +1,5 @@
 # BMapper
-Software para video mapping, realizado con [OpenFrameworks](https://openframeworks.cc/), basdo en [ofxPiMapper](https://ofxpimapper.com/) desarrollado por Krisjanis Rijnieks. 
+Software para video mapping, realizado con [OpenFrameworks](https://openframeworks.cc/), basado en [ofxPiMapper](https://ofxpimapper.com/) desarrollado por Krisjanis Rijnieks. 
 
 
 ## DEPENDENCIES ##
