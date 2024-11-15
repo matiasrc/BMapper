@@ -10,7 +10,7 @@ ofxOsc (Incluido en OF / included in OF Core)
 
 ofxXmlSettings (included in Of Core)
 
-[ofxSpout] (https://github.com/elliotwoods/ofxSpout)
+ofxSpout (https://github.com/elliotwoods/ofxSpout)
 
 [ofxSyphon] (https://github.com/astellato/ofxSyphon)
 
