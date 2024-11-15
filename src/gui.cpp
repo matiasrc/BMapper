@@ -133,7 +133,11 @@ void ofApp::drawGui() {
         
         if (ImGui::BeginMenu("|OSC|")) {
             
-            if(ImGui::InputInt("Puerto OSC", &oscPort)) receiver.setup(oscPort); ImGui::SameLine(); HelpMarker("Definir puerto OSC de entrada");
+            if(ImGui::InputInt("Puerto OSC", &oscPort)) 
+            {
+                receiver.setup(oscPort);
+                ImGui::SameLine(); HelpMarker("Definir puerto OSC de entrada");
+            }
         
             ImGui::EndMenu();
         }

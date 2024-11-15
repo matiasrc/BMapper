@@ -2,20 +2,20 @@
     <surface type="1">
         <vertices>
             <vertex>
-                <x>678.000000000</x>
-                <y>180.000000000</y>
+                <x>342.000000000</x>
+                <y>206.000000000</y>
             </vertex>
             <vertex>
-                <x>945.465332031</x>
-                <y>175.559661865</y>
+                <x>793.000000000</x>
+                <y>214.000000000</y>
             </vertex>
             <vertex>
-                <x>945.465332031</x>
-                <y>384.440277100</y>
+                <x>779.000000000</x>
+                <y>603.000000000</y>
             </vertex>
             <vertex>
-                <x>575.000000000</x>
-                <y>481.000000000</y>
+                <x>349.000000000</x>
+                <y>580.000000000</y>
             </vertex>
         </vertices>
         <texCoords>
@@ -38,36 +38,33 @@
         </texCoords>
         <source>
             <source-type>fbo</source-type>
-            <source-name>atomizador</source-name>
-            <source-loop>0</source-loop>
-            <source-sound></source-sound>
+            <source-name>Syphon Source</source-name>
         </source>
         <control>
-            <assignedKey>s</assignedKey>
-            <oscAddress>/control-panel-and-operation.mp4</oscAddress>
-            <speed>7</speed>
+            <assignedKey></assignedKey>
+            <oscAddress>/superficie_2</oscAddress>
         </control>
         <properties>
             <perspectiveWarping>1</perspectiveWarping>
         </properties>
     </surface>
-    <surface type="1">
+    <surface type="5">
         <vertices>
             <vertex>
-                <x>62.739715576</x>
-                <y>279.973266602</y>
+                <x>93.000000000</x>
+                <y>525.000000000</y>
             </vertex>
             <vertex>
-                <x>518.000000000</x>
-                <y>166.000000000</y>
+                <x>118.000000000</x>
+                <y>745.000000000</y>
             </vertex>
             <vertex>
-                <x>483.316162109</x>
-                <y>584.026916504</y>
+                <x>331.953430176</x>
+                <y>686.465148926</y>
             </vertex>
             <vertex>
-                <x>62.739715576</x>
-                <y>584.026916504</y>
+                <x>285.000000000</x>
+                <y>503.000000000</y>
             </vertex>
         </vertices>
         <texCoords>
@@ -89,15 +86,13 @@
             </texCoord>
         </texCoords>
         <source>
-            <source-type>fbo</source-type>
-            <source-name>boca_lengua</source-name>
+            <source-type>video</source-type>
+            <source-name>control-panel-and-operation.mp4</source-name>
             <source-loop>0</source-loop>
-            <source-sound></source-sound>
         </source>
         <control>
-            <assignedKey>2</assignedKey>
-            <oscAddress>/image4.jpg</oscAddress>
-            <speed>24</speed>
+            <assignedKey>r</assignedKey>
+            <oscAddress>/superficie_1</oscAddress>
         </control>
         <properties>
             <perspectiveWarping>1</perspectiveWarping>

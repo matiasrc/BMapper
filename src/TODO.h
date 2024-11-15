@@ -9,11 +9,11 @@
 #define TODO_h
 
 
-// No anda el meneu popup cuando quier oponer una tecla reservada
-// agregar syphon para windows
-// se cambia la tecla elegida para el play
 //
 
+
+// agregar syphon para windows // LISTO
+//No anda el meneu popup cuando quier oponer una tecla reservada // LISTO
 // arreglar BUG al salir de la app // LISTO
 // hacer andar sonido // LISTO
 // agregar el sonido elegido al xml // LISTO

@@ -31,6 +31,7 @@ void ofApp::update(){
 
 void ofApp::draw(){
     if (editMode) {
+        ofPushStyle();
         ofBackground(100);
         ofSetColor(80);
         
@@ -51,6 +52,8 @@ void ofApp::draw(){
                 font.drawString(text, x, y);
             }
         }
+        
+        ofPopStyle();
     } else {
         ofBackground(0);
     }
