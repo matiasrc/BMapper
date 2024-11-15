@@ -75,4 +75,4 @@ Lo mismo puede hacerse con el resto de los controles:
 - Filtros por Shaders
 
 ## PRE RELEASES ##
-[Binaries / ejecutables](https://github.com/matiasrc/BBlobTracker-lite/releases/tag/v.0.1) OSX y WIN
+[Binaries / ejecutables](https://github.com/matiasrc/BMapper/releases/tag/v.0.1) OSX y WIN
