@@ -29,7 +29,7 @@ Modo Edición o ejecución (Control / Cmd + e): Cambia de modo para poder crear,
 Los contenidos (imagenes, videos, secuencias, sonidos) deben agregarse en la carpeta 'data/sources'. Se pueden agregar imágenes (jpg, png, bmp, gif), videos (mov, mp4, avi), secuencias de PNG con transparencia, sonidos (wav, mp3, aiff, aif). Una vez agradados, al abrirse nuevamente la aplicaión, estarán disponibles para ser asignados a una superficie. 
 
 ### ACCESO RÁPIDO DE TECLADO ###
-Modo edición: ctrl / cmd + e
+Modo edición: ctrl / cmd + e /n
 Guardar: ctrl / cmd + s
 Deshacer: ctrl / cmd + z
 Pantalla completa: ctrl / cmd + f
