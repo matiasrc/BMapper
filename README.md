@@ -1,5 +1,5 @@
 # BMapper
-Software para video mapping, realizado con [OpenFrameworks](https://openframeworks.cc/), basdo en [ofxPiMapper] (https://ofxpimapper.com/) desarrollado por Krisjanis Rijnieks. 
+Software para video mapping, realizado con [OpenFrameworks](https://openframeworks.cc/), basdo en [ofxPiMapper](https://ofxpimapper.com/) desarrollado por Krisjanis Rijnieks. 
 
 
 ## DEPENDENCIES ##
@@ -14,19 +14,19 @@ ofxXmlSettings (included in Of Core)
 
 [ofxSyphon](https://github.com/astellato/ofxSyphon)
 
-[ofxImGui] (https://github.com/jvcleave/ofxImGui)
+[ofxImGui](https://github.com/jvcleave/ofxImGui)
 
-[ofxPiMapper fork] (https://github.com/matiasrc/ofxPiMapper/tree/main) 
+[ofxPiMapper fork](https://github.com/matiasrc/ofxPiMapper/tree/main) 
 
 
 ## Ayuda ##
 
 ### MODOS ###
                         
-Modo Edición (Control / Cmd + e): Cambia de modo para poder crear, editar superficies y definir su contenido.\n\n"
+Modo Edición o ejecución (Control / Cmd + e): Cambia de modo para poder crear, editar superficies y definir su contenido.
                         
 ### CONTENIDOS ###
-Para agregar contenidos, ubicarlos en la carpeta 'data/fuentes'. Se pueden agregar imágenes (jpg, png, bmp, gif), videos (mov, mp4, avi), secuencias de PNG con transparencia, sonidos (wav, mp3, aiff, aif).
+Los contenidos (imagenes, videos, secuencias, sonidos) deben agregarse en la carpeta 'data/sources'. Se pueden agregar imágenes (jpg, png, bmp, gif), videos (mov, mp4, avi), secuencias de PNG con transparencia, sonidos (wav, mp3, aiff, aif). Una vez agradados, al abrirse nuevamente la aplicaión, estarán disponibles para ser asignados a una superficie. 
 
 ### ACCESO RÁPIDO DE TECLADO ###
 Modo edición: ctrl / cmd + e
@@ -34,19 +34,19 @@ Guardar: ctrl / cmd + s
 Deshacer: ctrl / cmd + z
 Pantalla completa: ctrl / cmd + f
 Modo presentación: ctrl / cmd + p
-Modificar superficies:
-ocultar o ver capas:
-                        
-                    
+
+## Modificar superficie s##
+Ocultar o ver capas: l
 Agrandar superficie seleccionada: +
 Achicar superficie seleccionada: -                          
-Mover punto, o superficies: flecha o flechas + shift
 Seleccionar superficie siguiente:  .
 Seleccionar superficie anterior:  ,
-
-eleccionar vértice siguiente:  <
+Seleccionar vértice siguiente:  <
 Seleccionar vértice anterior:  >
-Solo en modo EDICIÓN: \
+
+Mover vértice o superficies (una vez seleccionados): flecha o flechas + shift (para hacerlo por pasos más grandes)
+
+# Solo en modo EDICIÓN: #
 
 Crear superficie triangular: t
 Crear superficie rectangular: q
