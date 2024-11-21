@@ -5,7 +5,7 @@
  	name = "Syphon Source";
 
  	// Allocate our FBO source, decide how big it should be
- 	allocate(400, 400);
+ 	allocate(500, 500);
 
     #if defined(TARGET_OSX)
  	//setup our directory
@@ -57,12 +57,15 @@
  // Don't do any drawing here
 void SyphonSource::update(){
 #if defined(TARGET_OSX)
-    //esto deberia andar anda
+    //esto deberia andar anda'
+    
      if (mClient.isSetup()) {
-         if (getWidth() != mClient.getWidth() || getHeight() != mClient.getHeight()) {
+         if ((getWidth() != mClient.getWidth() || getHeight() != mClient.getHeight()) && mClient.getWidth() > 0 && mClient.getHeight() > 0) {
              allocate(mClient.getWidth(), mClient.getHeight());
          }
      }
+    
+    
 #elif defined(TARGET_WIN32)
      if (texture.isAllocated()) {
          if (getWidth() != texture.getWidth() || getHeight() != texture.getHeight()) {
