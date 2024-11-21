@@ -55,10 +55,14 @@
 #endif
 
  // Don't do any drawing here
- void SyphonSource::update(){
-     
+void SyphonSource::update(){
 #if defined(TARGET_OSX)
-    
+    //esto deberia andar anda
+     if (mClient.isSetup()) {
+         if (getWidth() != mClient.getWidth() || getHeight() != mClient.getHeight()) {
+             allocate(mClient.getWidth(), mClient.getHeight());
+         }
+     }
 #elif defined(TARGET_WIN32)
      if (texture.isAllocated()) {
          if (getWidth() != texture.getWidth() || getHeight() != texture.getHeight()) {
@@ -72,9 +76,6 @@
  // No need to take care of fbo.begin() and fbo.end() here.
  // All within draw() is being rendered into fbo;
  void SyphonSource::draw(){
-     
-    
-     
     #if defined(TARGET_OSX)
  	if(dir.isValidIndex(dirIdx))
         mClient.draw(0, 0);
