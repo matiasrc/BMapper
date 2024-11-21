@@ -56,6 +56,7 @@ void ofApp::draw(){
         ofPopStyle();
     } else {
         ofBackground(0);
+        ofSetColor(255);
     }
     
     piMapper.draw();
@@ -64,7 +65,7 @@ void ofApp::draw(){
 }
 
 void ofApp::keyPressed(int key) {
-    if((key == 'e' || key == 'E') && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if((key == 'e' || key == 'E' || key==5) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         editMode = !editMode;
         if(editMode){
             piMapper.setMode(ofx::piMapper::MAPPING_MODE);
@@ -73,19 +74,19 @@ void ofApp::keyPressed(int key) {
         }
     }
     
-    if((key == 's' || key == 'S') && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if((key == 's' || key == 'S' || key == 19) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         piMapper.saveProject();
         ofLogNotice() << "--------> PROYECTO GUARDADO";
     }
     
-    if ((key == 'z' || key == 'Z') && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if ((key == 'z' || key == 'Z' || key == 26) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         piMapper.undo();
     }
     
-    if ((key == 'f' || key == 'F') && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if ((key == 'f' || key == 'F' || key == 6) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         ofToggleFullscreen();
     }
-    if ((key == 'p' || key == 'P') && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if ((key == 'p' || key == 'P' || key == 16) && (ofGetKeyPressed(OF_KEY_CONTROL))) {
         piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
         ofSetFullscreen(true);
         editMode = false;
