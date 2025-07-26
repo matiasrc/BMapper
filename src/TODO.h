@@ -10,7 +10,7 @@
 
 
 //
-
+//
 
 // agregar syphon para windows // LISTO
 //No anda el meneu popup cuando quier oponer una tecla reservada // LISTO

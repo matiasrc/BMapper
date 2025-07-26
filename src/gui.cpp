@@ -26,6 +26,7 @@ void ofApp::drawGui() {
         if (ImGui::BeginMenu("|Aplicación|")) {
             if (ImGui::MenuItem("Guardar (cmd/ctrl + s)")) {
                 piMapper.saveProject();
+                saveSettings();
                 ofLogNotice() << "--------> PROYECTO GUARDADO";
             }
             ImGui::NewLine();
@@ -283,9 +284,9 @@ void ofApp::drawGui() {
                             ImGui::EndMenu();
                         }
 
-                if (ImGui::MenuItem("Syphon")) {
+                if (ImGui::MenuItem("Server")) {
                     //config.source = "Syphon";
-                    piMapper.setFboSource("Syphon Source");
+                    piMapper.setFboSource("Video server");
                     // Añadir lógica para manejar fuentes Syphon en piMapper
                 }
                 ImGui::EndMenu();
@@ -294,7 +295,7 @@ void ofApp::drawGui() {
             ImGui::NewLine();
             
             if (selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
-                if (selectedSource->getName() != "Syphon Source") {
+                if (selectedSource->getName() != "Video server") {
                     Secuencia * sec = dynamic_cast<Secuencia *>(selectedSource);
                     std::string selectedAudio = sec->getAudioTrack(); // Asigna una cadena vacía si sec es nulo
                     
@@ -327,7 +328,7 @@ void ofApp::drawGui() {
             // Controles de video para superficies de tipo video
             if ((selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
                  selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) &&
-                 selectedSource->getName() != "Syphon Source") { // Reemplaza con el tipo de video de tu librería
+                 selectedSource->getName() != "Video server") { // Reemplaza con el tipo de video de tu librería
               ImGui::Separator();
               ImGui::Text("Controles de video");
                 if (ImGui::Button("Play")) {
@@ -360,7 +361,7 @@ void ofApp::drawGui() {
                 
                 if (selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO){
                     
-                    if(selectedSource->getName() != "Syphon Source"){
+                    if(selectedSource->getName() != "Video server"){
                         Secuencia * sec = dynamic_cast<Secuencia *>(selectedSource);
                                                 
                         ImGui::NewLine();

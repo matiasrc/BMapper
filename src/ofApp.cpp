@@ -4,6 +4,7 @@ void ofApp::setup() {
     ofBackground(0, 255);
     
     //----------------- GUI -------------------
+    loadSettings();
     //required call
     gui.setup();
     
@@ -76,6 +77,7 @@ void ofApp::keyPressed(int key) {
     
     if((key == 's' || key == 'S' || key == 19) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         piMapper.saveProject();
+        saveSettings();
         ofLogNotice() << "--------> PROYECTO GUARDADO";
     }
     
@@ -228,6 +230,8 @@ void ofApp::processOscMessage(const ofxOscMessage& message) {
     ofx::piMapper::BaseSurface* surface = piMapper.getSurfaceAt(i);
       
     if (surface->getOscAddress() == address) {
+        
+    ofLogNotice() << "-------->Entró nuevo mensaje OSC: " << message;
       // La dirección OSC coincide con la superficie
       if (message.getNumArgs() > 0 && message.getArgType(0) == OFXOSC_TYPE_STRING) {
           
@@ -302,7 +306,7 @@ void ofApp::loadData() {
     
     // Register our sources.
     // This should be done before mapper.setup().
-    piMapper.registerFboSource(SyphonClient);
+    piMapper.registerFboSource(videoServer);
         
     // Aquí crearemos una nueva instancia de Secuencia y la asignaremos
 
@@ -325,4 +329,38 @@ void ofApp::loadData() {
             secuencias.push_back(sequenceSource);
         }
     }
+}
+//--------------------------------------------------------------
+void ofApp::loadSettings(){
+    //-----------
+    //the string is printed at the top of the app
+    //to give the user some feedback
+    xmlMessage = "loading mySettings.xml";
+
+    //we load our settings file
+    //if it doesn't exist we can still make one
+    //by hitting the 's' key
+    if( XML.load("mySettings.xml") ){
+        xmlMessage = "mySettings.xml loaded!";
+    }else{
+        xmlMessage = "unable to load mySettings.xml check data/ folder";
+    }
+        
+    //---------------- OSC --------------------
+    oscPort = XML.getValue("OSC:PUERTO_OSC", 3333);
+
+    ofLog(OF_LOG_NOTICE,xmlMessage);
+}
+//--------------------------------------------------------------
+void ofApp::saveSettings(){
+
+    XML.clear();
+
+   
+    //---------------- OSC --------------------
+    XML.setValue("OSC:PUERTO_OSC", oscPort);
+    
+    XML.save("mySettings.xml");
+    xmlMessage ="settings saved to xml!";
+    ofLog(OF_LOG_NOTICE,xmlMessage);
 }

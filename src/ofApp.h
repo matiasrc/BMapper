@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxPiMapper.h"
 #include "VideoSource.h"
-#include "SyphonSource.h"
+#include "VideoServer.h"
 #include "ofxImGui.h"
 #include "ofxXmlSettings.h"
 #include "ofxOsc.h"
@@ -29,7 +29,7 @@ public:
     
     // By using a custom source that is derived from FboSource
     // you will be able to see the source listed in sources editor
-    SyphonSource SyphonClient;
+    VideoServer videoServer;
     
     bool editMode = false; // Modo edición
     bool loop = false;
@@ -41,7 +41,12 @@ public:
     
     void loadData();
 
-    
+    //----------------- SETTINGS -------------------
+    void loadSettings();
+    void saveSettings();
+    ofxXmlSettings          XML;
+    string                  xmlMessage;
+
     //----------------- GUI -------------------
     void drawGui();
     ofxImGui::Gui gui;
@@ -55,7 +60,7 @@ public:
     
     //----------------- OSC -------------------
     ofxOscReceiver receiver;
-    int oscPort = 3333;
+    int oscPort;
     void processOscMessage(const ofxOscMessage& message);
 };
 
