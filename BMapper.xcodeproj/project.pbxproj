@@ -73,7 +73,6 @@
 		"84D91371-1D08-4DDC-AA27-99717C64AF97" /* Secuencia.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "10523A75-FE38-4024-8045-04C8812DF795" /* Secuencia.cpp */; };
 		"8602C4E8-D5EB-4F68-943E-36B04909E555" /* Syphon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "FC349BDE-5308-4264-9BD7-26E6932CBD69" /* Syphon.framework */; };
 		"86BD4040-C60C-47A1-ABEF-7A59254770A6" /* OscOutboundPacketStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "0DB60EB1-BC15-41A0-9EA4-40B5A6DF32CC" /* OscOutboundPacketStream.cpp */; };
-		"86C447D6-3C5B-4EFC-8003-F26C933FEC94" /* SyphonSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "0D6A605F-694C-438C-8DD2-AE0AB59CC43D" /* SyphonSource.cpp */; };
 		"88FE98FD-4B9B-4649-9FC3-E1B5B520BDEA" /* NetworkingUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "4F7A45C9-0C55-4A01-98B7-769083F94708" /* NetworkingUtils.cpp */; };
 		"897B4D52-A132-4C08-98E5-A5BE7C6F4A57" /* DirectoryWatcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "614452E4-2D5B-4FBE-AF7E-9F528EFA6F39" /* DirectoryWatcher.cpp */; };
 		"8A36BC9D-9924-4CB5-8FB3-0D6ADD67B964" /* SetTexMapDrawModeCmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "23867A9F-8B05-400F-9987-C685330E1155" /* SetTexMapDrawModeCmd.cpp */; };
@@ -130,6 +129,7 @@
 		"F37E3125-F7AB-4B10-B6EA-413AFF17B502" /* Syphon.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "FC349BDE-5308-4264-9BD7-26E6932CBD69" /* Syphon.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		"F388EA3F-208F-440C-86CA-72BD8FB501D9" /* SourcesEditorWidget.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "E887DE4D-12B1-4510-8BFE-42ACE8AB29F1" /* SourcesEditorWidget.cpp */; };
 		"F53653B2-8F74-4DF3-AFBE-865D5EB02467" /* TranslateCanvasCmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "94739174-EFDF-4E0C-876C-B25EA4B32C33" /* TranslateCanvasCmd.cpp */; };
+		F923C06A2E358A9200B85B96 /* VideoServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F923C0682E358A9200B85B96 /* VideoServer.cpp */; };
 		"F9FFB7D3-761E-45C6-A19A-EC70630954FA" /* ofxOscSender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "BE4301F8-FDB3-43A8-B508-AE4AD2485C17" /* ofxOscSender.cpp */; };
 		"FA811155-4D82-4D6F-B429-78165603130C" /* ofxImGuiLoggerChannel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "18227284-037C-427C-9A04-D927FB52AEF4" /* ofxImGuiLoggerChannel.cpp */; };
 		"FC21CB4F-DC61-47DB-A615-21AA6F7F59CD" /* CircleSurface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = "65BE0908-3DCD-447E-BE9F-03EFB878A88F" /* CircleSurface.cpp */; };
@@ -177,7 +177,6 @@
 		"0C3E8545-9F89-406B-B03C-27CD2DE945A1" /* ProjectionEditorWidget.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ProjectionEditorWidget.h; path = ../../../addons/ofxPiMapper/src/Gui/Widgets/ProjectionEditorWidget.h; sourceTree = SOURCE_ROOT; };
 		"0C55ADD6-4079-4E7A-9658-7B2952F20888" /* OscHostEndianness.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = OscHostEndianness.h; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/OscHostEndianness.h; sourceTree = SOURCE_ROOT; };
 		"0C5A8BD1-4993-4C01-831F-D12A201CB44E" /* ofxOsc.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxOsc.h; path = ../../../addons/ofxOsc/src/ofxOsc.h; sourceTree = SOURCE_ROOT; };
-		"0D6A605F-694C-438C-8DD2-AE0AB59CC43D" /* SyphonSource.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SyphonSource.cpp; path = src/SyphonSource/SyphonSource.cpp; sourceTree = SOURCE_ROOT; };
 		"0DB60EB1-BC15-41A0-9EA4-40B5A6DF32CC" /* OscOutboundPacketStream.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = OscOutboundPacketStream.cpp; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/OscOutboundPacketStream.cpp; sourceTree = SOURCE_ROOT; };
 		"0F5673FD-DEC1-4E67-BC07-CB19C5231E42" /* TriangleSurface.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = TriangleSurface.h; path = ../../../addons/ofxPiMapper/src/Surfaces/TriangleSurface.h; sourceTree = SOURCE_ROOT; };
 		"10523A75-FE38-4024-8045-04C8812DF795" /* Secuencia.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Secuencia.cpp; path = src/Secuencia.cpp; sourceTree = SOURCE_ROOT; };
@@ -310,7 +309,6 @@
 		"803AD18A-5EBB-4E21-9377-C323305ACBE3" /* ofxSyphonNSObject.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxSyphonNSObject.hpp; path = ../../../addons/ofxSyphon/src/ofxSyphonNSObject.hpp; sourceTree = SOURCE_ROOT; };
 		"80A819AF-C462-4E7A-9D6E-618892FA6582" /* BaseSource.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = BaseSource.h; path = ../../../addons/ofxPiMapper/src/Sources/BaseSource.h; sourceTree = SOURCE_ROOT; };
 		"816BF22E-A5B4-4607-9668-FC5B225B7ED9" /* MvSurfaceVertCmd.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MvSurfaceVertCmd.cpp; path = ../../../addons/ofxPiMapper/src/Commands/MvSurfaceVertCmd.cpp; sourceTree = SOURCE_ROOT; };
-		"843C7AEA-4E7C-4C46-B948-04496762A493" /* SyphonSource.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SyphonSource.h; path = src/SyphonSource/SyphonSource.h; sourceTree = SOURCE_ROOT; };
 		"851EEA3E-4EF9-4ECC-99AC-2533BBCED82B" /* OscOutboundPacketStream.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = OscOutboundPacketStream.h; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/OscOutboundPacketStream.h; sourceTree = SOURCE_ROOT; };
 		"855F6EA3-BD0B-4A5B-9A02-267B41346EA8" /* BaseSource.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BaseSource.cpp; path = ../../../addons/ofxPiMapper/src/Sources/BaseSource.cpp; sourceTree = SOURCE_ROOT; };
 		"8591F056-C8DE-4B45-ADC6-0843480F71FF" /* GuiMode.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GuiMode.h; path = ../../../addons/ofxPiMapper/src/UserInterface/GuiMode.h; sourceTree = SOURCE_ROOT; };
@@ -430,6 +428,8 @@
 		"F82B9E3E-CDD7-42E4-AF0E-7EFA8DE86589" /* MessageMappingOscPacketListener.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = MessageMappingOscPacketListener.h; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/MessageMappingOscPacketListener.h; sourceTree = SOURCE_ROOT; };
 		"F85E9463-97AD-4A76-AD5B-D073EED969CB" /* BaseEngine.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BaseEngine.cpp; path = ../../../addons/ofxImGui/src/BaseEngine.cpp; sourceTree = SOURCE_ROOT; };
 		"F8CE6CB5-B7AB-4EB1-807B-DD764A09660A" /* ScaleWidget.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ScaleWidget.cpp; path = ../../../addons/ofxPiMapper/src/Gui/Widgets/ScaleWidget.cpp; sourceTree = SOURCE_ROOT; };
+		F923C0672E358A9200B85B96 /* VideoServer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VideoServer.h; sourceTree = "<group>"; };
+		F923C0682E358A9200B85B96 /* VideoServer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VideoServer.cpp; sourceTree = "<group>"; };
 		F987FE5C2C7FE989009B7CBF /* BMapperDebug.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BMapperDebug.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		"F9A23BAB-63C2-43F5-ABE5-93C371CCDDA8" /* SurfaceManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SurfaceManager.cpp; path = ../../../addons/ofxPiMapper/src/Surfaces/SurfaceManager.cpp; sourceTree = SOURCE_ROOT; };
 		"F9FE80CD-2A24-4CC9-8384-1D4103947938" /* ofxGuiUtils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ofxGuiUtils.h; path = ../../../addons/ofxGui/src/ofxGuiUtils.h; sourceTree = SOURCE_ROOT; };
@@ -855,16 +855,6 @@
 			path = ../../../addons/ofxOsc;
 			sourceTree = SOURCE_ROOT;
 		};
-		"B27EC80E-5717-4E17-9954-A220DC0D28F5" /* SyphonSource */ = {
-			isa = PBXGroup;
-			children = (
-				"0D6A605F-694C-438C-8DD2-AE0AB59CC43D" /* SyphonSource.cpp */,
-				"843C7AEA-4E7C-4C46-B948-04496762A493" /* SyphonSource.h */,
-			);
-			name = SyphonSource;
-			path = src/SyphonSource;
-			sourceTree = SOURCE_ROOT;
-		};
 		"B8747E19-20BA-4018-90AC-A4A161B6783B" /* src */ = {
 			isa = PBXGroup;
 			children = (
@@ -1003,8 +993,8 @@
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
 				"10523A75-FE38-4024-8045-04C8812DF795" /* Secuencia.cpp */,
 				"23C75E04-1441-4F3D-844D-A7B32E3E79A6" /* Secuencia.h */,
+				F923C0692E358A9200B85B96 /* server */,
 				"41CE9757-F2C3-45DE-8D11-CEC66910E62C" /* gui.cpp */,
-				"B27EC80E-5717-4E17-9954-A220DC0D28F5" /* SyphonSource */,
 				"025D9363-BE44-4C13-9A54-6A46E3B9B14C" /* TODO.h */,
 			);
 			path = src;
@@ -1085,6 +1075,15 @@
 			name = src;
 			path = ../../../addons/ofxOsc/src;
 			sourceTree = SOURCE_ROOT;
+		};
+		F923C0692E358A9200B85B96 /* server */ = {
+			isa = PBXGroup;
+			children = (
+				F923C0672E358A9200B85B96 /* VideoServer.h */,
+				F923C0682E358A9200B85B96 /* VideoServer.cpp */,
+			);
+			path = server;
+			sourceTree = "<group>";
 		};
 		"FE57FCBD-2077-4506-897C-AC2D460077F0" /* Application */ = {
 			isa = PBXGroup;
@@ -1205,7 +1204,6 @@
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				E4B69E210A3A1BDC003C02F2 /* ofApp.cpp in Sources */,
 				"84D91371-1D08-4DDC-AA27-99717C64AF97" /* Secuencia.cpp in Sources */,
-				"86C447D6-3C5B-4EFC-8003-F26C933FEC94" /* SyphonSource.cpp in Sources */,
 				"E1F13957-E9AE-461C-A873-F68B9344F53B" /* gui.cpp in Sources */,
 				"802B5C25-A3A1-4EB2-8677-34FBE5FDBE61" /* ofxBaseGui.cpp in Sources */,
 				"3B590C08-5711-4D8C-9083-9C6DCA85AD02" /* ofxButton.cpp in Sources */,
@@ -1327,6 +1325,7 @@
 				"72CE1FAF-E026-4078-B824-969BD808CB8D" /* ofxSyphonClient.mm in Sources */,
 				"A2F1B515-0A2C-4303-ABFD-409DCD48CCA6" /* ofxSyphonNSObject.mm in Sources */,
 				"7300C4FE-9CA9-47F2-A024-D15FD3D4A845" /* ofxSyphonServer.mm in Sources */,
+				F923C06A2E358A9200B85B96 /* VideoServer.cpp in Sources */,
 				"941483F3-6FA8-4350-A212-E913E7ADC3B1" /* ofxSyphonServerDirectory.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
