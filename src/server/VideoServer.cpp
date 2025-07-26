@@ -1,8 +1,8 @@
- #include "SyphonSource.h"
+ #include "VideoServer.h"
 
- void SyphonSource::setup(){
+ void VideoServer::setup(){
  	// Give our source a decent name
- 	name = "Syphon Source";
+ 	name = "Video server";
 
  	// Allocate our FBO source, decide how big it should be
  	allocate(500, 500);
@@ -14,10 +14,10 @@
  	mClient.setup();
 
  	//register for our directory's callbacks
- 	ofAddListener(dir.events.serverAnnounced, this, &SyphonSource::serverAnnounced);
+ 	ofAddListener(dir.events.serverAnnounced, this, &VideoServer::serverAnnounced);
  	// not yet implemented
  	//ofAddListener(dir.events.serverUpdated, this, &ofApp::serverUpdated);
- 	ofAddListener(dir.events.serverRetired, this, &SyphonSource::serverRetired);
+ 	ofAddListener(dir.events.serverRetired, this, &VideoServer::serverRetired);
 
  	dirIdx = -1;
      
@@ -28,7 +28,7 @@
 
 #if defined(TARGET_OSX)
  //these are our directory's callbacks
- void SyphonSource::serverAnnounced(ofxSyphonServerDirectoryEventArgs &arg)
+ void VideoServer::serverAnnounced(ofxSyphonServerDirectoryEventArgs &arg)
  {
     for( auto& dir : arg.servers ){
  			ofLogNotice("ofxSyphonServerDirectory Server Announced")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
@@ -36,7 +36,7 @@
  	dirIdx = 0;
  }
 
- void SyphonSource::serverUpdated(ofxSyphonServerDirectoryEventArgs &arg)
+ void VideoServer::serverUpdated(ofxSyphonServerDirectoryEventArgs &arg)
  {
  	for( auto& dir : arg.servers ){
  			ofLogNotice("ofxSyphonServerDirectory Server Updated")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
@@ -44,7 +44,7 @@
  	dirIdx = 0;
  }
 
- void SyphonSource::serverRetired(ofxSyphonServerDirectoryEventArgs &arg)
+ void VideoServer::serverRetired(ofxSyphonServerDirectoryEventArgs &arg)
  {
     for( auto& dir : arg.servers ){
  			ofLogNotice("ofxSyphonServerDirectory Server Retired")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
@@ -55,7 +55,7 @@
 #endif
 
  // Don't do any drawing here
-void SyphonSource::update(){
+void VideoServer::update(){
 #if defined(TARGET_OSX)
     //esto deberia andar anda'
     
@@ -78,7 +78,7 @@ void SyphonSource::update(){
 
  // No need to take care of fbo.begin() and fbo.end() here.
  // All within draw() is being rendered into fbo;
- void SyphonSource::draw(){
+ void VideoServer::draw(){
     #if defined(TARGET_OSX)
  	if(dir.isValidIndex(dirIdx))
         mClient.draw(0, 0);
@@ -89,7 +89,7 @@ void SyphonSource::update(){
  }
 
  //--------------------------------------------------------------
- void SyphonSource::keyReleased(int key){
+ void VideoServer::keyReleased(int key){
     #if defined(TARGET_OSX)
      //press any key to move through all available Syphon servers
      if (dir.size() > 0)

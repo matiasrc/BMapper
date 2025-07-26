@@ -15,7 +15,7 @@
 #endif
 
 
- class SyphonSource : public ofx::piMapper::FboSource {
+ class VideoServer : public ofx::piMapper::FboSource {
  	public:
         void setup();
  		void update();
