@@ -66,6 +66,10 @@ void ofApp::draw(){
 }
 
 void ofApp::keyPressed(int key) {
+    
+    ofLogNotice() << "---------Tecla presionada: " << key << " - Carácter: " << (char)key;
+
+    
     if((key == 'e' || key == 'E' || key==5) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         editMode = !editMode;
         if(editMode){
@@ -92,6 +96,10 @@ void ofApp::keyPressed(int key) {
         piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
         ofSetFullscreen(true);
         editMode = false;
+    }
+
+    if (key == OF_KEY_F1) {
+        showHelpPopup = true;
     }
     
     switch(key){

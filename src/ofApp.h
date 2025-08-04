@@ -58,9 +58,21 @@ public:
     
     ofDirectory dir;
     
+    bool showHelpPopup = false;
+    
     //----------------- OSC -------------------
     ofxOscReceiver receiver;
     int oscPort;
     void processOscMessage(const ofxOscMessage& message);
+    
+private:
+    
+    //----------------- GUI -------------------
+    struct HelpPopup {
+        string title;
+        string content;
+        bool shouldOpen = false;
+    };
+    HelpPopup helpPopup;
 };
 

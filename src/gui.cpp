@@ -21,6 +21,78 @@ static void HelpMarker(const char* desc)
 void ofApp::drawGui() {
     gui.begin();
     
+    // Popup de ayuda (siempre disponible, se muestra según showHelpPopup)
+        if (showHelpPopup) {
+            ImGui::OpenPopup("Ayuda de BMapper");
+            showHelpPopup = false; // Reseteamos el estado
+        }
+        
+        if (ImGui::BeginPopupModal("Ayuda de BMapper", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text(
+                        "MODOS\n\n"
+                        
+                        "Modo Edición (Control / Cmd + e): Cambia de modo para poder crear, editar superficies y definir su contenido.\n\n"
+                        "CONTENIDOS\n"
+                        "Para agregar contenidos, ubicarlos en la carpeta 'data/fuentes'.\n"
+                        "Se pueden agregar imágenes (jpg, png, bmp, gif)\n"
+                        "videos (mov, mp4, avi)\n"
+                        "secuencias de PNG con transparencia\n"
+                        
+                        "sonidos (wav, mp3, aiff, aif).\n\n"
+                        "ACCESO RÁPIDO DE TECLADO\n"
+                        "Modo edición: ctrl / cmd + e\n"
+                        "Guardar: ctrl / cmd + s\n"
+                        "Deshacer: ctrl / cmd + z\n"
+                        "Pantalla completa: ctrl / cmd + f\n"
+                        "Modo presentación: ctrl / cmd + p\n"
+                        "Modificar superficies:\n"
+                        "ocultar o ver capas: l\n"
+                        
+                        
+                        "Agrandar superficie seleccionada: +\n"
+                        "Achicar superficie seleccionada: -\n"
+                            
+                        "Mover punto, o superficies: flecha o flechas + shift\n"
+                               
+                        "Seleccionar superficie siguiente:  .\n"
+
+                        "Seleccionar superficie anterior:  ,\n"
+
+                        "Seleccionar vértice siguiente:  <\n"
+
+                        "Seleccionar vértice anterior:  >\n"
+                                 
+                        "Solo en modo EDICIÓN: \n"
+
+                        "Crear superficie triangular: t\n"
+                        "Crear superficie rectangular: q\n"
+                        "Crear superficie circular: c\n"
+                        "Crear superficie hexagonal: h\n"
+                        "Crear superficie grilla: g\n"
+                        
+                        "Duplicar superficie: d\n"
+
+                        "Borrar superficie: backspace\n\n"
+                        
+                        "CONTROL DE CONTENIDOS\n\n"
+                        
+                        "Tanto los videos como las secuencias de png se pueden ejecutar con los comandos: play, stop, pause y resume, tanto desde el menú de cada superficie como desde afuera a través de mensajes OSC.\n"
+                        "También se pueden reproducir (play) a partir de una tecla del teclado.\n\n"
+                        "OSC permite enviar mensajes a una superficie, usando etiquetas definidas para comandos como '/superficie1 play'. \n"
+                        "Lo mismo puede hacerse con el resto de los controles: \n"
+                        "/superficie1 stop\n"
+                        "/superficie1 pause\n"
+                        "/superficie1 resume \n"
+                        
+                        ); // Tu texto completo aquí
+            
+            if (ImGui::Button("Cerrar")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    
     // Mostrar menú principal solo en modo edición
     if (editMode && ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("|Aplicación|")) {
@@ -156,18 +228,21 @@ void ofApp::drawGui() {
             ImGui::EndMenu();
         }
         
-        /*
         
         // Nuevo menú de ayuda
         if (ImGui::BeginMenu("|Ayuda|"))
         {
             if (ImGui::MenuItem("Ver Ayuda")) {
                 ImGui::OpenPopup("AyudaPopup");
+                
+                showHelpPopup = true;
+                
                 ofLogNotice() << "--------> Abriendo Ayuda"; // Confirmar que entra aquí
             }
             ImGui::EndMenu();
         }
-                
+            
+        /*
         // Contenido del popup de ayuda
         if (ImGui::BeginPopupModal("AyudaPopup", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
             ofLogNotice() << "--------> Popup Ayuda Abierto"; // Confirmar que entra aquí
@@ -233,7 +308,9 @@ void ofApp::drawGui() {
             }
             ImGui::EndPopup();
         }
-        */
+         
+         */
+    
         
         ImGui::EndMainMenuBar();
     }
