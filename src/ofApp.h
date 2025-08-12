@@ -3,7 +3,13 @@
 #include "ofMain.h"
 #include "ofxPiMapper.h"
 #include "VideoSource.h"
+
+#if defined(TARGET_OSX)
 #include "VideoServer.h"
+#elif defined(TARGET_WIN32)
+#include "server/VideoServer.h"
+#endif
+
 #include "ofxImGui.h"
 #include "ofxXmlSettings.h"
 #include "ofxOsc.h"

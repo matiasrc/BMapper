@@ -205,19 +205,19 @@ void ofApp::keyReleased(int key) {
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
-    if (!ImGui::IsAnyWindowHovered() && !ImGui::IsAnyItemHovered()) {
+    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mouseDragged(x, y, button);
     }
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    if (!ImGui::IsAnyWindowHovered() && !ImGui::IsAnyItemHovered()) {
+    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mousePressed(x, y, button);
     }
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-    if (!ImGui::IsAnyWindowHovered() && !ImGui::IsAnyItemHovered()) {
+    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mouseReleased(x, y, button);
     }
 }
