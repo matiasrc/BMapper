@@ -28,3 +28,6 @@ BMapper.vcxproj
 BMapper.vcxproj.filters
 BMapper.vcxproj.user
 
+
+# VS Code IntelliSense cache
+.vscode/browse.db*

@@ -14,8 +14,8 @@ public:
     void draw();
 
     bool loadSequence(const std::string& folderPath);
-    bool setAudioTrack(const std::string& audioPath);
-    std::string getAudioTrack();
+    bool setAudioTrack(const std::string& audioPath) override;
+    std::string getAudioTrack() override;
     void play();
     void stop();
     void pause();
@@ -43,4 +43,3 @@ private:
     std::string audioTrack;
     void clear();
 };
-
