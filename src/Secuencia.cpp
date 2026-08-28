@@ -1,7 +1,9 @@
 #include "Secuencia.h"
 
+#include <algorithm>
+
 Secuencia::Secuencia()
-    : currentFrame(0), isPlaying(false), isLooping(false), speed(24), lastUpdateTime(0) {
+    : currentFrame(0), isPlaying(false), isPaused(false), isLooping(false), speed(24), lastUpdateTime(0) {
     frameDuration = 1000.0f / speed;
 }
 
@@ -16,17 +18,24 @@ void Secuencia::setup(std::string newName) {
 }
 
 void Secuencia::update() {
-    if (isPlaying) {
-        uint64_t currentTime = ofGetElapsedTimeMillis();
-        if (currentTime - lastUpdateTime >= frameDuration) {
-            currentFrame = (currentFrame + 1) % images.size();
-            lastUpdateTime = currentTime;
-
-            if (currentFrame == 0 && !isLooping) {
-                stop();
-            }
-        }
+    if (!isPlaying || images.empty()) {
+        return;
     }
+
+    const uint64_t currentTime = ofGetElapsedTimeMillis();
+    const uint64_t elapsedTime = currentTime - lastUpdateTime;
+    if (elapsedTime < frameDuration) {
+        return;
+    }
+
+    const size_t framesToAdvance = static_cast<size_t>(elapsedTime / frameDuration);
+    if (!isLooping && currentFrame + framesToAdvance >= images.size()) {
+        stop();
+        return;
+    }
+
+    currentFrame = (currentFrame + framesToAdvance) % images.size();
+    lastUpdateTime += static_cast<uint64_t>(framesToAdvance * frameDuration);
 }
 
 void Secuencia::draw() {
@@ -51,25 +60,26 @@ bool Secuencia::loadSequence(const std::string& folderPath) {
         return false;
     }
 
-    clear();  // Clear any previously loaded images
-
-    images.reserve(dir.size()); // Reservar espacio para las imágenes
+    std::vector<ofImage> loadedImages;
+    loadedImages.reserve(dir.size());
     
     for (const auto& file : dir) {
         ofImage img;
         if (img.load(file.getAbsolutePath())) {
-            images.push_back(img); // Almacenar ofImage en lugar de ofTexture
+            loadedImages.push_back(std::move(img));
         } else {
             ofLogError("ImageSequenceSource") << "Failed to load image: " << file.getAbsolutePath();
             return false;
         }
     }
 
-    if (images.empty()) {
+    if (loadedImages.empty()) {
         ofLogError("ImageSequenceSource") << "No images loaded from directory: " << folderPath;
         return false;
     }
 
+    clear();
+    images = std::move(loadedImages);
     currentFrame = 0;
     return true;
 }
@@ -118,12 +128,33 @@ bool Secuencia::loadSequence(const std::string& folderPath) {
  */
 
 bool Secuencia::setAudioTrack(const std::string& audioPath) {
-    audioTrack = audioPath;
-    if (!soundPlayer.load("sources/sonidos/" + audioTrack)) {
+    if (audioPath == audioTrack) {
+        return true;
+    }
+
+    const bool wasPlaying = isPlaying;
+    const bool wasPaused = isPaused;
+    soundPlayer.stop();
+    soundPlayer.unload();
+    audioTrack.clear();
+
+    if (audioPath.empty()) {
+        return true;
+    }
+
+    if (!soundPlayer.load("sources/sonidos/" + audioPath)) {
         ofLogError("ImageSequenceSource") << "Failed to load audio track: " << audioPath;
         return false;
     }
+
+    audioTrack = audioPath;
     soundPlayer.setLoop(isLooping);
+    if (wasPlaying) {
+        soundPlayer.play();
+    } else if (wasPaused) {
+        soundPlayer.play();
+        soundPlayer.setPaused(true);
+    }
     return true;
 }
 
@@ -132,11 +163,16 @@ std::string Secuencia::getAudioTrack(){
 }
 
 void Secuencia::play() {
-    
     if (!images.empty()) {
         ofLogNotice() << "------->PLAY secuencia: " + name;
+        currentFrame = 0;
         isPlaying = true;
-        soundPlayer.play();
+        isPaused = false;
+        if (soundPlayer.isLoaded()) {
+            soundPlayer.stop();
+            soundPlayer.setPosition(0.0f);
+            soundPlayer.play();
+        }
         lastUpdateTime = ofGetElapsedTimeMillis();
     }
 }
@@ -144,21 +180,41 @@ void Secuencia::play() {
 void Secuencia::stop() {
     ofLogNotice() << "------->STOP secuencia: " + name;
     isPlaying = false;
-    soundPlayer.stop();
+    isPaused = false;
+    if (soundPlayer.isLoaded()) {
+        soundPlayer.stop();
+        soundPlayer.setPosition(0.0f);
+    }
     currentFrame = 0;
 }
 
 void Secuencia::pause() {
     ofLogNotice() << "------->PAUSE secuencia: " + name;
+    if (!isPlaying) {
+        return;
+    }
     isPlaying = false;
-    soundPlayer.setPaused(true);
+    isPaused = true;
+    if (soundPlayer.isLoaded()) {
+        soundPlayer.setPaused(true);
+    }
 }
 
 void Secuencia::resume() {
     ofLogNotice() << "------->RESUME secuencia: " + name;
     if (!images.empty()) {
+        const bool resumePausedPlayback = isPaused;
         isPlaying = true;
-        soundPlayer.setPaused(false);
+        isPaused = false;
+        if (soundPlayer.isLoaded()) {
+            if (resumePausedPlayback) {
+                soundPlayer.setPaused(false);
+            } else {
+                soundPlayer.stop();
+                soundPlayer.setPosition(0.0f);
+                soundPlayer.play();
+            }
+        }
         lastUpdateTime = ofGetElapsedTimeMillis();
     }
 }
@@ -173,7 +229,7 @@ bool Secuencia::getLoop() {
 }
 
 void Secuencia::setSpeed(int fps) {
-    speed = fps;
+    speed = std::max(1, fps);
     frameDuration = 1000.0f / speed;
 }
 
@@ -186,7 +242,10 @@ void Secuencia::clear() {
     images.clear();
     currentFrame = 0;
     soundPlayer.stop();
+    soundPlayer.unload();
+    audioTrack.clear();
     isPlaying = false;
+    isPaused = false;
 }
 
 std::string Secuencia::getName() {
@@ -196,5 +255,3 @@ std::string Secuencia::getName() {
 void Secuencia::setName(std::string newName) {
     name = newName;
 }
-
-

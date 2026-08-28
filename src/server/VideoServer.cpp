@@ -13,11 +13,10 @@
  	//setup our client
  	mClient.setup();
 
- 	//register for our directory's callbacks
- 	ofAddListener(dir.events.serverAnnounced, this, &VideoServer::serverAnnounced);
- 	// not yet implemented
- 	//ofAddListener(dir.events.serverUpdated, this, &ofApp::serverUpdated);
- 	ofAddListener(dir.events.serverRetired, this, &VideoServer::serverRetired);
+    // Register for directory callbacks.
+    ofAddListener(dir.events.serverAnnounced, this, &VideoServer::serverAnnounced);
+    ofAddListener(dir.events.serverUpdated, this, &VideoServer::serverUpdated);
+    ofAddListener(dir.events.serverRetired, this, &VideoServer::serverRetired);
 
  	dirIdx = -1;
      
@@ -30,10 +29,12 @@
  //these are our directory's callbacks
  void VideoServer::serverAnnounced(ofxSyphonServerDirectoryEventArgs &arg)
  {
-    for( auto& dir : arg.servers ){
- 			ofLogNotice("ofxSyphonServerDirectory Server Announced")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
- 	}
- 	dirIdx = 0;
+    for (auto& dir : arg.servers) {
+        ofLogNotice("ofxSyphonServerDirectory Server Announced") << " Server Name: " << dir.serverName << " | App Name: " << dir.appName;
+    }
+    if (!dir.isValidIndex(dirIdx)) {
+        selectServer(0);
+    }
  }
 
  void VideoServer::serverUpdated(ofxSyphonServerDirectoryEventArgs &arg)
@@ -41,7 +42,9 @@
  	for( auto& dir : arg.servers ){
  			ofLogNotice("ofxSyphonServerDirectory Server Updated")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
  	}
- 	dirIdx = 0;
+    if (!dir.isValidIndex(dirIdx)) {
+        selectServer(0);
+    }
  }
 
  void VideoServer::serverRetired(ofxSyphonServerDirectoryEventArgs &arg)
@@ -49,7 +52,37 @@
     for( auto& dir : arg.servers ){
  			ofLogNotice("ofxSyphonServerDirectory Server Retired")<<" Server Name: "<<dir.serverName <<" | App Name: "<<dir.appName;
  	}
- 	dirIdx = 0;
+    if (dir.size() == 0) {
+        dirIdx = -1;
+    } else if (!dir.isValidIndex(dirIdx)) {
+        selectServer(0);
+    }
+ }
+
+ bool VideoServer::selectServer(int index) {
+    if (!dir.isValidIndex(index)) {
+        return false;
+    }
+
+    dirIdx = index;
+    mClient.set(dir.getDescription(dirIdx));
+    ofLogNotice("VideoServer") << "Syphon seleccionado: "
+        << mClient.getApplicationName() << " / " << mClient.getServerName();
+    return true;
+ }
+
+ std::vector<std::string> VideoServer::getServerLabels() {
+    std::vector<std::string> labels;
+    labels.reserve(dir.size());
+    for (int i = 0; i < dir.size(); ++i) {
+        const auto description = dir.getDescription(i);
+        labels.push_back(description.appName + " / " + description.serverName);
+    }
+    return labels;
+ }
+
+ int VideoServer::getSelectedServerIndex() const {
+    return dirIdx;
  }
 
 #endif
@@ -98,21 +131,11 @@ void VideoServer::update(){
          if(dirIdx > dir.size() - 1)
              dirIdx = 0;
 
-         mClient.set(dir.getDescription(dirIdx));
-         string serverName = mClient.getServerName();
-         string appName = mClient.getApplicationName();
-
-         if(serverName == ""){
-             serverName = "null";
-         }
-         if(appName == ""){
-             appName = "null";
-         }
-         ofSetWindowTitle(serverName + ":" + appName);
+         selectServer(dirIdx);
      }
      else
      {
-         ofSetWindowTitle("No Server");
+         ofLogNotice("VideoServer") << "No hay servidores Syphon disponibles";
      }
     #endif
  }

@@ -70,6 +70,7 @@ public:
     ofxOscReceiver receiver;
     int oscPort;
     void processOscMessage(const ofxOscMessage& message);
+    static constexpr int MAX_OSC_MESSAGES_PER_FRAME = 128;
     
 private:
     
@@ -80,5 +81,5 @@ private:
         bool shouldOpen = false;
     };
     HelpPopup helpPopup;
+    ofTrueTypeFont editModeFont;
 };
-

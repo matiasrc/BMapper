@@ -2,11 +2,13 @@
 
 void ofApp::setup() {
     ofBackground(0, 255);
+    ofSetWindowTitle("BMapper");
     
     //----------------- GUI -------------------
     loadSettings();
     //required call
     gui.setup();
+    editModeFont.load("verdana.ttf", 12);
     
     ImGui::GetIO().MouseDrawCursor = false;
     
@@ -20,13 +22,12 @@ void ofApp::setup() {
 
 void ofApp::update(){
     piMapper.update();
-    for (auto s : secuencias) {
-        s->update();
-    }
-    while (receiver.hasWaitingMessages()) {
+    int processedMessages = 0;
+    while (receiver.hasWaitingMessages() && processedMessages < MAX_OSC_MESSAGES_PER_FRAME) {
         ofxOscMessage m;
         receiver.getNextMessage(m);
         processOscMessage(m);
+        ++processedMessages;
     }
 }
 
@@ -36,13 +37,9 @@ void ofApp::draw(){
         ofBackground(100);
         ofSetColor(80);
         
-        // Tamaño del texto
-        string text = "MODO EDICIÓN";
-        int textWidth = 200; // Ajusta esto según el tamaño del texto
-        int textHeight = 50; // Ajusta esto según el tamaño del texto
-        // Configurar la fuente y el tamaño
-        ofTrueTypeFont font;
-        font.load("verdana.ttf", 12); // Asegúrate de que esta fuente esté disponible
+        const string text = "MODO EDICIÓN";
+        const int textWidth = 200;
+        const int textHeight = 50;
         
         int screenWidth = ofGetWidth();
         int screenHeight = ofGetHeight();
@@ -50,7 +47,7 @@ void ofApp::draw(){
         // Dibujar el texto en un patrón de mosaico
         for (int y = 0; y < screenHeight; y += textHeight) {
             for (int x = 0; x < screenWidth; x += textWidth) {
-                font.drawString(text, x, y);
+                editModeFont.drawString(text, x, y);
             }
         }
         
@@ -62,13 +59,9 @@ void ofApp::draw(){
     
     piMapper.draw();
     drawGui();
-    ofSetWindowTitle("FPS: " + ofToString(ofGetFrameRate()));
 }
 
 void ofApp::keyPressed(int key) {
-    
-    ofLogNotice() << "---------Tecla presionada: " << key << " - Carácter: " << (char)key;
-
     
     if((key == 'e' || key == 'E' || key==5) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
         editMode = !editMode;
@@ -100,6 +93,10 @@ void ofApp::keyPressed(int key) {
 
     if (key == OF_KEY_F1) {
         showHelpPopup = true;
+    }
+
+    if (editMode && ImGui::GetIO().WantCaptureKeyboard) {
+        return;
     }
     
     switch(key){
@@ -201,7 +198,7 @@ void ofApp::keyPressed(int key) {
 }
 
 void ofApp::keyReleased(int key) {
-    //piMapper.keyReleased(key);
+    piMapper.keyReleased(key);
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
@@ -224,84 +221,73 @@ void ofApp::mouseReleased(int x, int y, int button) {
 
 
 void ofApp::processOscMessage(const ofxOscMessage& message) {
-  
-    std::string address = message.getAddress();
-
-    //ofLogNotice() << "-------->Entró nuevo mensaje OSC: " << message;
-    
-    // Obtener el administrador de superficies
-    ofx::piMapper::SurfaceManager* surfaceManager = piMapper._application.getSurfaceManager();
-
-    // Iterar sobre todas las superficies
-    for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
-      
-    ofx::piMapper::BaseSurface* surface = piMapper.getSurfaceAt(i);
-      
-    if (surface->getOscAddress() == address) {
-        
-    ofLogNotice() << "-------->Entró nuevo mensaje OSC: " << message;
-      // La dirección OSC coincide con la superficie
-      if (message.getNumArgs() > 0 && message.getArgType(0) == OFXOSC_TYPE_STRING) {
-          
-        std::string command = message.getArgAsString(0);
-          
-          if (surface->getSource()->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
-              surface->getSource()->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
-              
-              ofLogNotice() << "-------->furface: " + ofToString(i) + " " + surface->getOscAddress() + " | mensaje OSC: " + address;
-              // Verificar si el comando es válido y ejecutar la acción correspondiente
-              if (command == "play") {
-                piMapper.playForSurface(i);
-              } else if (command == "pause") {
-                  piMapper.pauseForSurface(i);
-              } else if (command == "stop") {
-                  piMapper.stopForSurface(i);
-              }else if (command == "resume") {
-                  piMapper.resumeForSurface(i);
-              }
-              else {
-                ofLogError() << "Comando OSC no reconocido: " << command;
-              }
-          }
-      } else {
-        ofLogError() << "Mensaje OSC no contiene el argumento de comando esperado.";
-      }
+    const std::string address = message.getAddress();
+    if (address.empty() || message.getNumArgs() == 0 || message.getArgType(0) != OFXOSC_TYPE_STRING) {
+        ofLogWarning("OSC") << "Mensaje OSC inválido recibido en " << address;
+        return;
     }
-  }
+
+    const std::string command = ofToLower(message.getArgAsString(0));
+    for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
+        ofx::piMapper::BaseSurface* surface = piMapper.getSurfaceAt(i);
+        if (surface == nullptr || surface->getOscAddress() != address || surface->getSource() == nullptr) {
+            continue;
+        }
+
+        const auto sourceType = surface->getSource()->getType();
+        if (sourceType != ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO &&
+            sourceType != ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
+            ofLogWarning("OSC") << "La superficie " << i << " no admite controles de reproducción";
+            continue;
+        }
+
+        if (command == "play") {
+            piMapper.playForSurface(i);
+        } else if (command == "pause") {
+            piMapper.pauseForSurface(i);
+        } else if (command == "stop") {
+            piMapper.stopForSurface(i);
+        } else if (command == "resume") {
+            piMapper.resumeForSurface(i);
+        } else {
+            ofLogWarning("OSC") << "Comando OSC no reconocido: " << command;
+        }
+    }
 }
 
 void ofApp::loadData() {
     // Configuración inicial
-    ofDirectory dir;
-    
-    // Listar archivos de imagen
-    dir.allowExt("jpg");
-    dir.allowExt("png");
-    dir.allowExt("bmp");
-    dir.allowExt("gif");
-    dir.listDir(DEFAULT_IMAGES_DIR); // Carpeta de imágenes en la carpeta data
-    for(auto file : dir.getFiles()){
+    ofDirectory imageDirectory(DEFAULT_IMAGES_DIR);
+    imageDirectory.allowExt("jpg");
+    imageDirectory.allowExt("png");
+    imageDirectory.allowExt("bmp");
+    imageDirectory.allowExt("gif");
+    imageDirectory.listDir();
+    imageDirectory.sort();
+    for(const auto& file : imageDirectory.getFiles()){
         ofLogNotice() << "Imagen encontrada: " << file.getFileName(); // Mensaje de depuración
         imageFiles.push_back(file.getFileName());
     }
     
-    // Listar archivos de video
-    dir.allowExt("mp4");
-    dir.allowExt("mov");
-    dir.allowExt("avi");
-    dir.listDir(DEFAULT_VIDEOS_DIR); // Carpeta de videos en la carpeta data
-    for(auto file : dir.getFiles()){
+    ofDirectory videoDirectory(DEFAULT_VIDEOS_DIR);
+    videoDirectory.allowExt("mp4");
+    videoDirectory.allowExt("mov");
+    videoDirectory.allowExt("avi");
+    videoDirectory.listDir();
+    videoDirectory.sort();
+    for(const auto& file : videoDirectory.getFiles()){
         ofLogNotice() << "Video encontrado: " << file.getFileName(); // Mensaje de depuración
         videoFiles.push_back(file.getFileName());
     }
     
-    // Listar archivos de audio
-    dir.allowExt("wav");
-    dir.allowExt("aiff");
-    dir.allowExt("aif");
-    dir.allowExt("mp3");
-    dir.listDir(DEFAULT_SOUNDS_DIR); // Carpeta de sonidos en la carpeta data
-    for (auto file : dir.getFiles()) {
+    ofDirectory audioDirectory(DEFAULT_SOUNDS_DIR);
+    audioDirectory.allowExt("wav");
+    audioDirectory.allowExt("aiff");
+    audioDirectory.allowExt("aif");
+    audioDirectory.allowExt("mp3");
+    audioDirectory.listDir();
+    audioDirectory.sort();
+    for (const auto& file : audioDirectory.getFiles()) {
         ofLogNotice() << "Audio encontrado: " << file.getFileName();
         audioFiles.push_back(file.getFileName());
     }
@@ -318,9 +304,10 @@ void ofApp::loadData() {
         
     // Aquí crearemos una nueva instancia de Secuencia y la asignaremos
 
-    dir.listDir("sources/secuencias"); // Carpeta de secuencias en la carpeta data
-    dir.allowExt(""); // Permitir todas las extensiones para carpetas
-    for (auto folder : dir.getFiles()) {
+    ofDirectory sequenceDirectory(DEFAULT_SEQUENCES_DIR);
+    sequenceDirectory.listDir();
+    sequenceDirectory.sort();
+    for (const auto& folder : sequenceDirectory.getFiles()) {
         if (folder.isDirectory()) {
             std::string folderName = folder.getFileName();
             ofLogNotice() << "----------->Secuencia encontrada: " << folderName; // Mensaje de depuración
@@ -331,7 +318,9 @@ void ofApp::loadData() {
             sequenceSource->setup(folderName);
             std::string nombre = sequenceSource->getName();
             //ofLogNotice()<< "----------->nombre de fuente: " + nombre;
-            if(!sequenceSource->loadSequence("sources/secuencias/" + nombre))  ofLogNotice()<< "----------->no se pudieron cagar imagenes en la secuencia" + nombre;;
+            if(!sequenceSource->loadSequence(std::string(DEFAULT_SEQUENCES_DIR) + nombre)) {
+                ofLogWarning() << "No se pudieron cargar imágenes en la secuencia " << nombre;
+            }
             
             piMapper.registerFboSource(sequenceSource);
             secuencias.push_back(sequenceSource);

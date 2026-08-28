@@ -21,10 +21,13 @@
  		void update();
  		void draw();
 
- 		void keyReleased(int key);
+		void keyReleased(int key);
 
         #if defined(TARGET_OSX)
- 		void serverAnnounced(ofxSyphonServerDirectoryEventArgs &arg);
+		bool selectServer(int index);
+		std::vector<std::string> getServerLabels();
+		int getSelectedServerIndex() const;
+		void serverAnnounced(ofxSyphonServerDirectoryEventArgs &arg);
  		void serverUpdated(ofxSyphonServerDirectoryEventArgs &args);
  		void serverRetired(ofxSyphonServerDirectoryEventArgs &arg);
 

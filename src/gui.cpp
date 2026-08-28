@@ -205,12 +205,11 @@ void ofApp::drawGui() {
         }
         
         if (ImGui::BeginMenu("|OSC|")) {
-            
-            if(ImGui::InputInt("Puerto OSC", &oscPort)) 
-            {
+            if(ImGui::InputInt("Puerto OSC", &oscPort)) {
+                oscPort = ofClamp(oscPort, 1, 65535);
                 receiver.setup(oscPort);
-                ImGui::SameLine(); HelpMarker("Definir puerto OSC de entrada");
             }
+            ImGui::SameLine(); HelpMarker("Definir puerto OSC de entrada (1 a 65535)");
         
             ImGui::EndMenu();
         }
@@ -361,10 +360,8 @@ void ofApp::drawGui() {
                             ImGui::EndMenu();
                         }
 
-                if (ImGui::MenuItem("Server")) {
-                    //config.source = "Syphon";
+                if (ImGui::MenuItem("Syphon")) {
                     piMapper.setFboSource("Video server");
-                    // Añadir lógica para manejar fuentes Syphon en piMapper
                 }
                 ImGui::EndMenu();
             }
@@ -372,31 +369,43 @@ void ofApp::drawGui() {
             ImGui::NewLine();
             
             if (selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
-                if (selectedSource->getName() != "Video server") {
-                    Secuencia * sec = dynamic_cast<Secuencia *>(selectedSource);
-                    std::string selectedAudio = sec->getAudioTrack(); // Asigna una cadena vacía si sec es nulo
-                    
-                    // Creamos un combo
-                    if (ImGui::BeginCombo("Asociar audio", selectedAudio.c_str())) {
-                        // Agregamos la opción "Ninguno" al principio del combo
-                        if (ImGui::Selectable("Ninguno")) {
-                            selectedAudio = "";
+                if (selectedSource->getName() == "Video server") {
+                    #if defined(TARGET_OSX)
+                    const auto serverLabels = videoServer.getServerLabels();
+                    if (serverLabels.empty()) {
+                        ImGui::TextDisabled("No hay servidores Syphon disponibles.");
+                    } else {
+                        int selectedServer = videoServer.getSelectedServerIndex();
+                        if (selectedServer < 0 || selectedServer >= static_cast<int>(serverLabels.size())) {
+                            selectedServer = 0;
                         }
-
-                        // Iteramos sobre los archivos de audio y los agregamos al combo
-                        for (const auto& audioFile : audioFiles) {
-                            if (ImGui::Selectable(audioFile.c_str())) {
-                                selectedAudio = audioFile;
+                        if (ImGui::BeginCombo("Fuente Syphon", serverLabels[selectedServer].c_str())) {
+                            for (int i = 0; i < static_cast<int>(serverLabels.size()); ++i) {
+                                if (ImGui::Selectable(serverLabels[i].c_str(), i == selectedServer)) {
+                                    videoServer.selectServer(i);
+                                }
                             }
+                            ImGui::EndCombo();
                         }
-
-                        ImGui::EndCombo();
                     }
+                    #endif
+                } else {
+                    if (auto* sec = dynamic_cast<Secuencia *>(selectedSource)) {
+                        const std::string selectedAudio = sec->getAudioTrack();
+                        const char* preview = selectedAudio.empty() ? "Ninguno" : selectedAudio.c_str();
 
-                    // Asignamos el audio a la secuencia
-                    if (!selectedAudio.empty()) {
-                        if (sec) {
-                            sec->setAudioTrack(selectedAudio);
+                        if (ImGui::BeginCombo("Asociar audio", preview)) {
+                            if (ImGui::Selectable("Ninguno", selectedAudio.empty())) {
+                                sec->setAudioTrack("");
+                            }
+
+                            for (const auto& audioFile : audioFiles) {
+                                if (ImGui::Selectable(audioFile.c_str(), selectedAudio == audioFile)) {
+                                    sec->setAudioTrack(audioFile);
+                                }
+                            }
+
+                            ImGui::EndCombo();
                         }
                     }
                 }
@@ -448,7 +457,10 @@ void ofApp::drawGui() {
                             if (ImGui::Checkbox("Loop", &isLooping)) sec->setLoop(isLooping);
                             
                             int speed = sec->getSpeed();
-                            if (ImGui::InputInt("FPS", &speed)) sec->setSpeed(speed); ImGui::SameLine(); HelpMarker("Velocidad, en cuadros por segundo para la animación");
+                            if (ImGui::DragInt("FPS", &speed, 1.0f, 1, 240)) {
+                                sec->setSpeed(speed);
+                            }
+                            ImGui::SameLine(); HelpMarker("Velocidad, en cuadros por segundo para la animación");
                         }
                     }
                 }
@@ -521,17 +533,20 @@ void ofApp::drawGui() {
                 ImGui::SameLine();  HelpMarker("Tecla para ejecutar el 'play' del video o animación");
                 
                 // Crear un búfer temporal para almacenar el texto ingresado
-                char oscAddressBuffer[256];
-                strcpy(oscAddressBuffer, surface->getOscAddress().c_str());
+                char oscAddressBuffer[256] = {};
+                std::snprintf(oscAddressBuffer, sizeof(oscAddressBuffer), "%s", surface->getOscAddress().c_str());
 
-                ImGui::InputText("Dirección OSC", oscAddressBuffer, sizeof(oscAddressBuffer), ImGuiInputTextFlags_CharsNoBlank);
+                const bool oscAddressChanged = ImGui::InputText("Dirección OSC", oscAddressBuffer, sizeof(oscAddressBuffer), ImGuiInputTextFlags_CharsNoBlank);
                 ImGui::SameLine(); HelpMarker("Definir una dirección (address) OSC. Debe comenzar con /");
 
-                // Copiar el texto ingresado al objeto selectedSource solo si cambió
-                if (strcmp(oscAddressBuffer, surface->getOscAddress().c_str()) != 0) {
-                    // Crear una variable local para la dirección OSC
+                if (oscAddressChanged) {
                     std::string newOscAddress = oscAddressBuffer;
-                    surface->setOscAddress(newOscAddress);
+                    if (newOscAddress.empty() || newOscAddress.front() == '/') {
+                        surface->setOscAddress(newOscAddress);
+                    }
+                }
+                if (oscAddressBuffer[0] != '\0' && oscAddressBuffer[0] != '/') {
+                    ImGui::TextDisabled("La dirección OSC debe comenzar con /.");
                 }
             }
             
@@ -541,8 +556,5 @@ void ofApp::drawGui() {
     
     gui.end();
 }
-
-
-
 
 
