@@ -18,6 +18,7 @@ void ofApp::setup() {
     
     //----------------- OSC -------------------
     receiver.setup(oscPort);
+    setStatusMessage("BMapper listo");
 }
 
 void ofApp::update(){
@@ -67,8 +68,10 @@ void ofApp::keyPressed(int key) {
         editMode = !editMode;
         if(editMode){
             piMapper.setMode(ofx::piMapper::MAPPING_MODE);
+            setStatusMessage("Modo edición activo");
         }else{
             piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
+            setStatusMessage("Modo presentación activo");
         }
     }
     
@@ -359,5 +362,11 @@ void ofApp::saveSettings(){
     
     XML.save("mySettings.xml");
     xmlMessage ="settings saved to xml!";
+    setStatusMessage("Proyecto guardado");
     ofLog(OF_LOG_NOTICE,xmlMessage);
+}
+
+void ofApp::setStatusMessage(const std::string& message) {
+    statusMessage = message;
+    statusMessageExpiresAt = ofGetElapsedTimeMillis() + 4000;
 }

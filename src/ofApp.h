@@ -50,6 +50,7 @@ public:
     //----------------- SETTINGS -------------------
     void loadSettings();
     void saveSettings();
+    void setStatusMessage(const std::string& message);
     ofxXmlSettings          XML;
     string                  xmlMessage;
 
@@ -82,4 +83,6 @@ private:
     };
     HelpPopup helpPopup;
     ofTrueTypeFont editModeFont;
+    std::string statusMessage;
+    uint64_t statusMessageExpiresAt = 0;
 };

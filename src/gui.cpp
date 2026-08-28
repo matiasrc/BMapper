@@ -208,6 +208,7 @@ void ofApp::drawGui() {
             if(ImGui::InputInt("Puerto OSC", &oscPort)) {
                 oscPort = ofClamp(oscPort, 1, 65535);
                 receiver.setup(oscPort);
+                setStatusMessage("OSC escuchando en el puerto " + ofToString(oscPort));
             }
             ImGui::SameLine(); HelpMarker("Definir puerto OSC de entrada (1 a 65535)");
         
@@ -552,9 +553,40 @@ void ofApp::drawGui() {
             
             ImGui::End();
         }
+
+        const ImGuiWindowFlags statusWindowFlags =
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoNav |
+            ImGuiWindowFlags_NoInputs;
+        ImGui::SetNextWindowPos(ImVec2(12.0f, ofGetHeight() - 12.0f), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+        ImGui::SetNextWindowBgAlpha(0.72f);
+        if (ImGui::Begin("Estado operativo", nullptr, statusWindowFlags)) {
+            ImGui::TextColored(ImVec4(0.25f, 0.9f, 0.65f, 1.0f), "BMapper · EDICIÓN");
+            ImGui::Separator();
+            ImGui::Text("FPS %.1f", ofGetFrameRate());
+            ImGui::SameLine();
+            ImGui::Text("OSC %d", oscPort);
+
+            const int selectedSurface = piMapper.getSelectedSurface();
+            if (selectedSurface >= 0 && selectedSurface < piMapper.getNumSurfaces()) {
+                auto* selectedSource = piMapper.getSurfaceAt(selectedSurface)->getSource();
+                if (selectedSource != nullptr) {
+                    ImGui::Text("Superficie %d · %s", selectedSurface, selectedSource->getName().c_str());
+                }
+            } else {
+                ImGui::TextDisabled("Sin superficie seleccionada");
+            }
+
+            if (!statusMessage.empty() && ofGetElapsedTimeMillis() <= statusMessageExpiresAt) {
+                ImGui::Separator();
+                ImGui::TextColored(ImVec4(0.95f, 0.82f, 0.35f, 1.0f), "%s", statusMessage.c_str());
+            }
+            ImGui::End();
+        }
     }
     
     gui.end();
 }
-
 
