@@ -82,8 +82,16 @@ void ofApp::draw(){
 }
 
 void ofApp::keyPressed(int key) {
-    
-    if((key == 'e' || key == 'E' || key==5) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    const bool commandShortcut = ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL);
+    const bool controlShortcut = ofGetKeyPressed(OF_KEY_CONTROL) && !ofGetKeyPressed(OF_KEY_COMMAND);
+
+    const bool editShortcut = key == 'e' || key == 'E' || (controlShortcut && key == 5);
+    const bool saveShortcut = key == 's' || key == 'S' || (controlShortcut && key == 19);
+    const bool undoShortcut = key == 'z' || key == 'Z' || (controlShortcut && key == 26);
+    const bool fullscreenShortcut = key == 'f' || key == 'F' || (controlShortcut && key == 6);
+    const bool presentationShortcut = key == 'p' || key == 'P' || (controlShortcut && key == 16);
+
+    if(editShortcut && commandShortcut) {
         editMode = !editMode;
         if(editMode){
             piMapper.setMode(ofx::piMapper::MAPPING_MODE);
@@ -91,28 +99,29 @@ void ofApp::keyPressed(int key) {
             setStatusMessage("Modo edición activo");
         }else{
             piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
-            setStatusMessage("Modo presentación activo");
+            setStatusMessage("Modo presentación activo: edición bloqueada");
         }
     }
     
-    if((key == 's' || key == 'S' || key == 19) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if(saveShortcut && commandShortcut) {
         saveProjectFiles();
     }
     
-    if ((key == 'z' || key == 'Z' || key == 26) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if (editMode && undoShortcut && commandShortcut) {
         piMapper.undo();
     }
     
-    if ((key == 'f' || key == 'F' || key == 6) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if (fullscreenShortcut && commandShortcut) {
         ofToggleFullscreen();
     }
-    if ((key == 'p' || key == 'P' || key == 16) && (ofGetKeyPressed(OF_KEY_CONTROL))) {
+    if (presentationShortcut && commandShortcut) {
         piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
         ofSetFullscreen(true);
         editMode = false;
+        setStatusMessage("Modo presentación activo: edición bloqueada");
     }
 
-    if (key == OF_KEY_F1) {
+    if (editMode && key == OF_KEY_F1) {
         showHelpPopup = true;
     }
 
@@ -120,59 +129,61 @@ void ofApp::keyPressed(int key) {
         return;
     }
     
-    switch(key){
-        case 'l':
-            piMapper.toggleLayerPanel();
-            break;
-        case '+':
-            piMapper.scaleUp();
-            break;
-        case '-':
-            piMapper.scaleDown();
-            break;
-        case OF_KEY_UP:
-            if(ofGetKeyPressed(OF_KEY_SHIFT)){
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, -10.0f, 0.0f));
-            }else{
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, -1.0f, 0.0f));
-            }
-            break;
-               
-        case OF_KEY_DOWN:
-            if(ofGetKeyPressed(OF_KEY_SHIFT)){
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, 10.0f, 0.0f));
-            }else{
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, 1.0f, 0.0f));
-            }
-            break;
-               
-        case OF_KEY_LEFT:
-            if(ofGetKeyPressed(OF_KEY_SHIFT)){
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(-10.0f, 0.0f, 0.0f));
-            }else{
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(-1.0f, 0.0f, 0.0f));
-            }
-            break;
+    if (editMode) {
+        switch(key){
+            case 'l':
+                piMapper.toggleLayerPanel();
+                break;
+            case '+':
+                piMapper.scaleUp();
+                break;
+            case '-':
+                piMapper.scaleDown();
+                break;
+            case OF_KEY_UP:
+                if(ofGetKeyPressed(OF_KEY_SHIFT)){
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, -10.0f, 0.0f));
+                }else{
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, -1.0f, 0.0f));
+                }
+                break;
 
-        case OF_KEY_RIGHT:
-            if(ofGetKeyPressed(OF_KEY_SHIFT)){
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(10.0f, 0.0f, 0.0f));
-            }else{
-                piMapper._application.moveSelection(ofx::piMapper::Vec3(1.0f, 0.0f, 0.0f));
-            }
-            break;
-        case ',':
-            piMapper.selectPrevSurface();
-            break;
-        case '.':
-            piMapper.selectNextSurface();
-            break;
-        case '<':
-            piMapper.selectPrevVertex();
-            break;
-        case '>':
-            piMapper.selectNextVertex();
-            break;
+            case OF_KEY_DOWN:
+                if(ofGetKeyPressed(OF_KEY_SHIFT)){
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, 10.0f, 0.0f));
+                }else{
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(0.0f, 1.0f, 0.0f));
+                }
+                break;
+
+            case OF_KEY_LEFT:
+                if(ofGetKeyPressed(OF_KEY_SHIFT)){
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(-10.0f, 0.0f, 0.0f));
+                }else{
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(-1.0f, 0.0f, 0.0f));
+                }
+                break;
+
+            case OF_KEY_RIGHT:
+                if(ofGetKeyPressed(OF_KEY_SHIFT)){
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(10.0f, 0.0f, 0.0f));
+                }else{
+                    piMapper._application.moveSelection(ofx::piMapper::Vec3(1.0f, 0.0f, 0.0f));
+                }
+                break;
+            case ',':
+                piMapper.selectPrevSurface();
+                break;
+            case '.':
+                piMapper.selectNextSurface();
+                break;
+            case '<':
+                piMapper.selectPrevVertex();
+                break;
+            case '>':
+                piMapper.selectNextVertex();
+                break;
+        }
     }
     
     if(editMode && !ImGui::IsAnyItemActive()){
@@ -204,14 +215,16 @@ void ofApp::keyPressed(int key) {
         
     }
     
-    // Ejecutar 'play' para VideoSurface y FboSource con tecla asignada
-    for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
-    ofx::piMapper::BaseSurface* surface = piMapper.getSurfaceAt(i);
-        if (surface->getAssignedKey() == key) {
-            ofx::piMapper::BaseSource* selectedSource = surface->getSource();
-            if (selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
-                selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
-                piMapper.playForSurface(i);
+    if (!commandShortcut) {
+        // Ejecutar 'play' para VideoSurface y FboSource con tecla asignada.
+        for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
+            ofx::piMapper::BaseSurface* surface = piMapper.getSurfaceAt(i);
+            if (surface->getAssignedKey() == key) {
+                ofx::piMapper::BaseSource* selectedSource = surface->getSource();
+                if (selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
+                    selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
+                    piMapper.playForSurface(i);
+                }
             }
         }
     }
@@ -233,19 +246,19 @@ void ofApp::requestDeleteSelectedSurface() {
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
-    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
+    if (editMode && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mouseDragged(x, y, button);
     }
 }
 
 void ofApp::mousePressed(int x, int y, int button) {
-    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
+    if (editMode && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mousePressed(x, y, button);
     }
 }
 
 void ofApp::mouseReleased(int x, int y, int button) {
-    if (!ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
+    if (editMode && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) && !ImGui::IsAnyItemHovered()) {
         piMapper.mouseReleased(x, y, button);
     }
 }

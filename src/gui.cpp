@@ -71,6 +71,7 @@ void ofApp::drawGui() {
                         "Deshacer: ctrl / cmd + z\n"
                         "Pantalla completa: ctrl / cmd + f\n"
                         "Modo presentación: ctrl / cmd + p\n"
+                        "En presentación: solo OSC y teclas asignadas a contenidos.\n"
                         "Modificar superficies:\n"
                         "ocultar o ver capas: l\n"
                         
