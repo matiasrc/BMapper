@@ -329,43 +329,70 @@ void ofApp::drawGui() {
             ImGui::Begin(("Superficie " + std::to_string(selectedSurface) + " - " + selectedSource->getName()).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize);
 
             ImGui::Text("ID: %d", selectedSurface);
+            const char* sourceTypeLabel = "Sin contenido";
+            switch (selectedSource->getType()) {
+                case ofx::piMapper::SourceType::SOURCE_TYPE_IMAGE: sourceTypeLabel = "Imagen"; break;
+                case ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO: sourceTypeLabel = "Video"; break;
+                case ofx::piMapper::SourceType::SOURCE_TYPE_FBO: sourceTypeLabel = "Fuente en vivo / secuencia"; break;
+                default: break;
+            }
+            ImGui::Text("Contenido: %s", sourceTypeLabel);
+            ImGui::TextDisabled("%s", selectedSource->getName().empty() ? "Sin contenido asignado" : selectedSource->getName().c_str());
             
             ImGui::NewLine();
             
+            bool sourceChanged = false;
             if (ImGui::BeginMenu("Seleccionar Contenido")) {
                 if (ImGui::BeginMenu("Imagenes")) {
                     for (const auto& file : imageFiles) {
-                        if (ImGui::MenuItem(file.c_str())) {
-                            //config.source = file;
+                        const bool isSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_IMAGE &&
+                                                selectedSource->getName() == file;
+                        if (ImGui::MenuItem(file.c_str(), nullptr, isSelected, !isSelected)) {
                             piMapper.setImageSource(file);
+                            setStatusMessage("Imagen asignada: " + file);
+                            sourceChanged = true;
                         }
                     }
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Videos")) {
                     for (const auto& file : videoFiles) {
-                        if (ImGui::MenuItem(file.c_str())) {
-                            //onfig.source = file;
+                        const bool isSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO &&
+                                                selectedSource->getName() == file;
+                        if (ImGui::MenuItem(file.c_str(), nullptr, isSelected, !isSelected)) {
                             piMapper.setVideoSource(file, loop); // Configuración inicial de loop
+                            setStatusMessage("Video asignado: " + file);
+                            sourceChanged = true;
                         }
                     }
                     ImGui::EndMenu();
                 }
                                 
                 if (ImGui::BeginMenu("Secuencias")) {
-                        for (const auto& folder : sequenceFolders) {
-                
-                            if (ImGui::MenuItem(folder.c_str())) {
-                                piMapper.setFboSource(folder);
-                            }
+                    for (const auto& folder : sequenceFolders) {
+                        const bool isSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO &&
+                                                selectedSource->getName() == folder;
+                        if (ImGui::MenuItem(folder.c_str(), nullptr, isSelected, !isSelected)) {
+                            piMapper.setFboSource(folder);
+                            setStatusMessage("Secuencia asignada: " + folder);
+                            sourceChanged = true;
                         }
-                            ImGui::EndMenu();
-                        }
+                    }
+                    ImGui::EndMenu();
+                }
 
-                if (ImGui::MenuItem("Syphon")) {
+                const bool isSyphonSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO &&
+                                              selectedSource->getName() == "Video server";
+                if (ImGui::MenuItem("Syphon", nullptr, isSyphonSelected, !isSyphonSelected)) {
                     piMapper.setFboSource("Video server");
+                    setStatusMessage("Fuente Syphon asignada");
+                    sourceChanged = true;
                 }
                 ImGui::EndMenu();
+            }
+
+            if (sourceChanged) {
+                selectedSource = piMapper.getSurfaceAt(selectedSurface)->getSource();
             }
             
             ImGui::NewLine();
