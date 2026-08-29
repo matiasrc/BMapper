@@ -452,6 +452,9 @@ void ofApp::drawGui() {
                         ImGui::NewLine();
                        
                         if (sec) {
+                            ImGui::TextDisabled("Secuencia: %d fotogramas · caché %d",
+                                static_cast<int>(sec->getFrameCount()),
+                                static_cast<int>(sec->getCachedFrameCount()));
                             bool isLooping = sec->getLoop();
                             if (ImGui::Checkbox("Loop", &isLooping)) sec->setLoop(isLooping);
                             

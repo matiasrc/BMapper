@@ -18,7 +18,7 @@ void Secuencia::setup(std::string newName) {
 }
 
 void Secuencia::update() {
-    if (!isPlaying || images.empty()) {
+    if (!isPlaying || framePaths.empty()) {
         return;
     }
 
@@ -29,19 +29,24 @@ void Secuencia::update() {
     }
 
     const size_t framesToAdvance = static_cast<size_t>(elapsedTime / frameDuration);
-    if (!isLooping && currentFrame + framesToAdvance >= images.size()) {
+    if (!isLooping && currentFrame + framesToAdvance >= framePaths.size()) {
         stop();
         return;
     }
 
-    currentFrame = (currentFrame + framesToAdvance) % images.size();
+    currentFrame = (currentFrame + framesToAdvance) % framePaths.size();
     lastUpdateTime += static_cast<uint64_t>(framesToAdvance * frameDuration);
+
+    const size_t cacheBudget = std::max(
+        CACHE_LOADS_PER_UPDATE,
+        std::min(framesToAdvance, CACHE_AHEAD_FRAMES));
+    refreshFrameCache(currentFrame, cacheBudget);
 }
 
 void Secuencia::draw() {
-    ofBackground(0,0);
-    if (!images.empty() && currentFrame < images.size()) {
-        images[currentFrame].draw(0, 0, getWidth(), getHeight());
+    ofClear(0, 0, 0, 255);
+    if (currentFrame < framePaths.size() && loadFrame(currentFrame)) {
+        frameCache[currentFrame].draw(0, 0, getWidth(), getHeight());
     }
 }
 
@@ -60,72 +65,25 @@ bool Secuencia::loadSequence(const std::string& folderPath) {
         return false;
     }
 
-    std::vector<ofImage> loadedImages;
-    loadedImages.reserve(dir.size());
-    
+    std::vector<std::string> loadedPaths;
+    loadedPaths.reserve(dir.size());
     for (const auto& file : dir) {
-        ofImage img;
-        if (img.load(file.getAbsolutePath())) {
-            loadedImages.push_back(std::move(img));
-        } else {
-            ofLogError("ImageSequenceSource") << "Failed to load image: " << file.getAbsolutePath();
-            return false;
-        }
+        loadedPaths.push_back(file.getAbsolutePath());
     }
 
-    if (loadedImages.empty()) {
-        ofLogError("ImageSequenceSource") << "No images loaded from directory: " << folderPath;
+    ofImage firstFrame;
+    if (!firstFrame.load(loadedPaths.front())) {
+        ofLogError("ImageSequenceSource") << "Failed to load first image: " << loadedPaths.front();
         return false;
     }
 
     clear();
-    images = std::move(loadedImages);
+    framePaths = std::move(loadedPaths);
+    frameCache.emplace(0, std::move(firstFrame));
     currentFrame = 0;
+    refreshFrameCache(currentFrame, INITIAL_CACHE_FRAMES - 1);
     return true;
 }
-
-/*
-bool Secuencia::loadSequence(const std::string& folderPath) {
-    ofDirectory dir(folderPath);
-    if (!dir.exists()) {
-        ofLogError("ImageSequenceSource") << "Directory does not exist: " << folderPath;
-        return false;
-    }
-
-    dir.allowExt("png");
-    dir.listDir();
-    dir.sort();
-    if (dir.size() == 0) {
-        ofLogError("ImageSequenceSource") << "No images found in directory: " << folderPath;
-        return false;
-    }
-
-    clear();  // Clear any previously loaded images
-
-   ofImage cargador;
-    
-    for (const auto& file : dir) {
-        cargador.load(file.getAbsolutePath());
-        ofTexture texture;
-        texture.allocate(cargador.getWidth(), cargador.getHeight(), GL_RGBA);
-        texture.loadData(cargador.getPixels(), GL_RGBA);
-        
-        ofLoadImage(texture, file.getAbsolutePath());
-        images.push_back(texture);
-       // ofLogNotice() << "-------->Cargando imagen en secuencia  ";
-    }
-
-    if (images.empty()) {
-        ofLogError("ImageSequenceSource") << "No images loaded from directory: " << folderPath;
-        return false;
-    }
-
-    currentFrame = 0;
-    //allocate(images[0].getWidth(), images[0].getHeight());  // Resize FBO to match image size
-    return true;
-}
- 
- */
 
 bool Secuencia::setAudioTrack(const std::string& audioPath) {
     if (audioPath == audioTrack) {
@@ -163,9 +121,10 @@ std::string Secuencia::getAudioTrack(){
 }
 
 void Secuencia::play() {
-    if (!images.empty()) {
+    if (!framePaths.empty()) {
         ofLogNotice() << "------->PLAY secuencia: " + name;
         currentFrame = 0;
+        refreshFrameCache(currentFrame, CACHE_LOADS_PER_UPDATE);
         isPlaying = true;
         isPaused = false;
         if (soundPlayer.isLoaded()) {
@@ -202,7 +161,7 @@ void Secuencia::pause() {
 
 void Secuencia::resume() {
     ofLogNotice() << "------->RESUME secuencia: " + name;
-    if (!images.empty()) {
+    if (!framePaths.empty()) {
         const bool resumePausedPlayback = isPaused;
         isPlaying = true;
         isPaused = false;
@@ -238,14 +197,108 @@ int Secuencia::getSpeed(){
 }
 
 void Secuencia::clear() {
-    
-    images.clear();
+    for (auto& cachedFrame : frameCache) {
+        cachedFrame.second.clear();
+    }
+    frameCache.clear();
+    failedFrames.clear();
+    framePaths.clear();
     currentFrame = 0;
     soundPlayer.stop();
     soundPlayer.unload();
     audioTrack.clear();
     isPlaying = false;
     isPaused = false;
+}
+
+bool Secuencia::loadFrame(size_t frameIndex) {
+    if (frameIndex >= framePaths.size()) {
+        return false;
+    }
+    if (frameCache.count(frameIndex) != 0) {
+        return true;
+    }
+    if (failedFrames.count(frameIndex) != 0) {
+        return false;
+    }
+
+    ofImage frame;
+    if (!frame.load(framePaths[frameIndex])) {
+        failedFrames.insert(frameIndex);
+        ofLogError("ImageSequenceSource") << "Failed to load image: " << framePaths[frameIndex];
+        return false;
+    }
+
+    frameCache.emplace(frameIndex, std::move(frame));
+    return true;
+}
+
+void Secuencia::refreshFrameCache(size_t centerFrame, size_t loadBudget) {
+    if (framePaths.empty() || centerFrame >= framePaths.size()) {
+        return;
+    }
+
+    std::unordered_set<size_t> wantedFrames;
+    wantedFrames.insert(centerFrame);
+    size_t loadedFrames = 0;
+
+    if (frameCache.count(centerFrame) == 0 && loadFrame(centerFrame)) {
+        ++loadedFrames;
+    }
+
+    for (size_t offset = 1; offset <= CACHE_AHEAD_FRAMES; ++offset) {
+        const size_t frameIndex = getFrameIndexWithOffset(centerFrame, static_cast<int>(offset));
+        if (frameIndex >= framePaths.size()) {
+            break;
+        }
+        wantedFrames.insert(frameIndex);
+        if (loadedFrames < loadBudget && frameCache.count(frameIndex) == 0 && loadFrame(frameIndex)) {
+            ++loadedFrames;
+        }
+    }
+
+    for (size_t offset = 1; offset <= CACHE_BEHIND_FRAMES; ++offset) {
+        const size_t frameIndex = getFrameIndexWithOffset(centerFrame, -static_cast<int>(offset));
+        if (frameIndex >= framePaths.size()) {
+            break;
+        }
+        wantedFrames.insert(frameIndex);
+        if (loadedFrames < loadBudget && frameCache.count(frameIndex) == 0 && loadFrame(frameIndex)) {
+            ++loadedFrames;
+        }
+    }
+
+    for (auto it = frameCache.begin(); it != frameCache.end();) {
+        if (wantedFrames.count(it->first) == 0) {
+            it->second.clear();
+            it = frameCache.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+size_t Secuencia::getFrameIndexWithOffset(size_t frameIndex, int offset) const {
+    if (framePaths.empty()) {
+        return 0;
+    }
+
+    const long long frameCount = static_cast<long long>(framePaths.size());
+    long long candidate = static_cast<long long>(frameIndex) + offset;
+    if (isLooping) {
+        candidate = (candidate % frameCount + frameCount) % frameCount;
+    } else if (candidate < 0 || candidate >= frameCount) {
+        return framePaths.size();
+    }
+    return static_cast<size_t>(candidate);
+}
+
+size_t Secuencia::getFrameCount() const {
+    return framePaths.size();
+}
+
+size_t Secuencia::getCachedFrameCount() const {
+    return frameCache.size();
 }
 
 std::string Secuencia::getName() {
