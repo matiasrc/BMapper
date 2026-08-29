@@ -46,6 +46,7 @@ public:
     vector<Secuencia *> secuencias;
     
     void loadData();
+    void refreshMediaLists();
 
     //----------------- SETTINGS -------------------
     void loadSettings();

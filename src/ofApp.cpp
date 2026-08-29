@@ -1,5 +1,7 @@
 #include "ofApp.h"
 
+#include <algorithm>
+
 void ofApp::setup() {
     ofBackground(0, 255);
     ofSetWindowTitle("BMapper");
@@ -269,6 +271,16 @@ void ofApp::processOscMessage(const ofxOscMessage& message) {
 
 void ofApp::loadData() {
     // Configuración inicial
+    ofx::piMapper::VideoSource::enableAudio = true;
+    ofx::piMapper::VideoSource::useHDMIForAudio = false;
+
+    // Register sources before mapper.setup().
+    piMapper.registerFboSource(videoServer);
+    refreshMediaLists();
+}
+
+void ofApp::refreshMediaLists() {
+    imageFiles.clear();
     ofDirectory imageDirectory(DEFAULT_IMAGES_DIR);
     imageDirectory.allowExt("jpg");
     imageDirectory.allowExt("png");
@@ -277,10 +289,10 @@ void ofApp::loadData() {
     imageDirectory.listDir();
     imageDirectory.sort();
     for(const auto& file : imageDirectory.getFiles()){
-        ofLogNotice() << "Imagen encontrada: " << file.getFileName(); // Mensaje de depuración
         imageFiles.push_back(file.getFileName());
     }
     
+    videoFiles.clear();
     ofDirectory videoDirectory(DEFAULT_VIDEOS_DIR);
     videoDirectory.allowExt("mp4");
     videoDirectory.allowExt("mov");
@@ -288,10 +300,10 @@ void ofApp::loadData() {
     videoDirectory.listDir();
     videoDirectory.sort();
     for(const auto& file : videoDirectory.getFiles()){
-        ofLogNotice() << "Video encontrado: " << file.getFileName(); // Mensaje de depuración
         videoFiles.push_back(file.getFileName());
     }
     
+    audioFiles.clear();
     ofDirectory audioDirectory(DEFAULT_SOUNDS_DIR);
     audioDirectory.allowExt("wav");
     audioDirectory.allowExt("aiff");
@@ -300,44 +312,46 @@ void ofApp::loadData() {
     audioDirectory.listDir();
     audioDirectory.sort();
     for (const auto& file : audioDirectory.getFiles()) {
-        ofLogNotice() << "Audio encontrado: " << file.getFileName();
         audioFiles.push_back(file.getFileName());
     }
-    
-    //-----------------OFXPIMAPPER ------------------
-    // Enable or disable audio for video sources globally
-    // Set this to false to save resources on the Raspberry Pi
-    ofx::piMapper::VideoSource::enableAudio = true;
-    ofx::piMapper::VideoSource::useHDMIForAudio = false;
-    
-    // Register our sources.
-    // This should be done before mapper.setup().
-    piMapper.registerFboSource(videoServer);
-        
-    // Aquí crearemos una nueva instancia de Secuencia y la asignaremos
 
     ofDirectory sequenceDirectory(DEFAULT_SEQUENCES_DIR);
     sequenceDirectory.listDir();
     sequenceDirectory.sort();
+    std::vector<std::string> availableSequenceFolders;
     for (const auto& folder : sequenceDirectory.getFiles()) {
         if (folder.isDirectory()) {
             std::string folderName = folder.getFileName();
-            ofLogNotice() << "----------->Secuencia encontrada: " << folderName; // Mensaje de depuración
-            sequenceFolders.push_back(folder.getFileName());
-        
-            // Aquí crearemos una nueva instancia de Secuencia y la asignaremos
+            const bool isAlreadyRegistered = std::any_of(
+                secuencias.begin(), secuencias.end(),
+                [&folderName](Secuencia* sequence) {
+                    return sequence != nullptr && sequence->getName() == folderName;
+                });
+            if (isAlreadyRegistered) {
+                availableSequenceFolders.push_back(folderName);
+                continue;
+            }
+
             auto* sequenceSource = new Secuencia();
             sequenceSource->setup(folderName);
-            std::string nombre = sequenceSource->getName();
-            //ofLogNotice()<< "----------->nombre de fuente: " + nombre;
-            if(!sequenceSource->loadSequence(std::string(DEFAULT_SEQUENCES_DIR) + nombre)) {
-                ofLogWarning() << "No se pudieron cargar imágenes en la secuencia " << nombre;
+            if(!sequenceSource->loadSequence(std::string(DEFAULT_SEQUENCES_DIR) + folderName)) {
+                ofLogWarning() << "No se pudieron cargar imágenes en la secuencia " << folderName;
+                delete sequenceSource;
+                continue;
             }
-            
             piMapper.registerFboSource(sequenceSource);
             secuencias.push_back(sequenceSource);
+            availableSequenceFolders.push_back(folderName);
         }
     }
+    sequenceFolders = std::move(availableSequenceFolders);
+
+    auditProjectAssets();
+    setStatusMessage(
+        "Recursos actualizados: " + ofToString(imageFiles.size()) + " imágenes, " +
+        ofToString(videoFiles.size()) + " videos, " +
+        ofToString(audioFiles.size()) + " audios y " +
+        ofToString(sequenceFolders.size()) + " secuencias");
 }
 //--------------------------------------------------------------
 void ofApp::loadSettings(){

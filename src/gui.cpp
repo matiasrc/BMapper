@@ -99,6 +99,9 @@ void ofApp::drawGui() {
             if (ImGui::MenuItem("Guardar (cmd/ctrl + s)")) {
                 saveProjectFiles();
             }
+            if (ImGui::MenuItem("Actualizar recursos")) {
+                refreshMediaLists();
+            }
             ImGui::NewLine();
             if (ImGui::MenuItem("Undo ( cmd/ctrl + z)")) {
                 piMapper.undo();
