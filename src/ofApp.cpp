@@ -405,7 +405,7 @@ void ofApp::loadSettings(){
     ofLog(OF_LOG_NOTICE,xmlMessage);
 }
 //--------------------------------------------------------------
-void ofApp::saveSettings(){
+bool ofApp::saveSettings(){
 
     XML.clear();
 
@@ -413,10 +413,21 @@ void ofApp::saveSettings(){
     //---------------- OSC --------------------
     XML.setValue("OSC:PUERTO_OSC", oscPort);
     
-    XML.save("mySettings.xml");
+    const std::string settingsFileName = "mySettings.xml";
+    const std::string temporaryFileName = settingsFileName + ".tmp";
+    if (!XML.save(temporaryFileName)) {
+        ofLogError("BMapper") << "Could not write temporary settings file";
+        return false;
+    }
+    if (!ofFile::moveFromTo(temporaryFileName, settingsFileName, true, true)) {
+        ofFile::removeFile(temporaryFileName);
+        ofLogError("BMapper") << "Could not replace settings file";
+        return false;
+    }
+
     xmlMessage ="settings saved to xml!";
-    setStatusMessage("Proyecto guardado");
     ofLog(OF_LOG_NOTICE,xmlMessage);
+    return true;
 }
 
 void ofApp::saveProjectFiles(bool automatic) {
@@ -439,12 +450,26 @@ void ofApp::saveProjectFiles(bool automatic) {
         return;
     }
 
-    piMapper.saveProject();
-    saveSettings();
-    lastProjectAutosaveTime = ofGetElapsedTimeMillis();
-    if (automatic) {
-        setStatusMessage("Autoguardado realizado");
+    if (!piMapper.saveProject()) {
+        setStatusMessage(automatic
+            ? "Autoguardado incompleto: no se pudo guardar el mapping"
+            : "Guardado incompleto: no se pudo guardar el mapping");
+        ofLogError("BMapper") << "Project save failed while writing mapping settings";
+        lastProjectAutosaveTime = ofGetElapsedTimeMillis();
+        return;
     }
+
+    if (!saveSettings()) {
+        setStatusMessage(automatic
+            ? "Autoguardado incompleto: no se pudo guardar la configuración OSC"
+            : "Guardado incompleto: no se pudo guardar la configuración OSC");
+        ofLogError("BMapper") << "Project save failed while writing OSC settings";
+        lastProjectAutosaveTime = ofGetElapsedTimeMillis();
+        return;
+    }
+
+    lastProjectAutosaveTime = ofGetElapsedTimeMillis();
+    setStatusMessage(automatic ? "Autoguardado realizado" : "Proyecto guardado");
     ofLogNotice() << "--------> PROYECTO GUARDADO";
 }
 

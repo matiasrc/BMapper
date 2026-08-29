@@ -50,7 +50,7 @@ public:
 
     //----------------- SETTINGS -------------------
     void loadSettings();
-    void saveSettings();
+    bool saveSettings();
     void saveProjectFiles(bool automatic = false);
     bool createProjectBackup();
     void pruneProjectBackups();
