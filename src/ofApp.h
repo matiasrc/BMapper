@@ -50,6 +50,8 @@ public:
     //----------------- SETTINGS -------------------
     void loadSettings();
     void saveSettings();
+    void saveProjectFiles();
+    void auditProjectAssets();
     void setStatusMessage(const std::string& message);
     ofxXmlSettings          XML;
     string                  xmlMessage;
@@ -85,4 +87,6 @@ private:
     ofTrueTypeFont editModeFont;
     std::string statusMessage;
     uint64_t statusMessageExpiresAt = 0;
+    std::vector<std::string> assetWarnings;
+    uint64_t lastAssetAuditTime = 0;
 };

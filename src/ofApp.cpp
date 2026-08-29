@@ -15,14 +15,25 @@ void ofApp::setup() {
     loadData();
     
     piMapper.setup();
+    auditProjectAssets();
+    if (assetWarnings.empty()) {
+        setStatusMessage("Proyecto verificado");
+    } else {
+        setStatusMessage("Atención: " + ofToString(assetWarnings.size()) + " recurso(s) no disponible(s)");
+    }
     
     //----------------- OSC -------------------
     receiver.setup(oscPort);
-    setStatusMessage("BMapper listo");
 }
 
 void ofApp::update(){
     piMapper.update();
+
+    const uint64_t now = ofGetElapsedTimeMillis();
+    if (now - lastAssetAuditTime >= 1000) {
+        auditProjectAssets();
+    }
+
     int processedMessages = 0;
     while (receiver.hasWaitingMessages() && processedMessages < MAX_OSC_MESSAGES_PER_FRAME) {
         ofxOscMessage m;
@@ -76,9 +87,7 @@ void ofApp::keyPressed(int key) {
     }
     
     if((key == 's' || key == 'S' || key == 19) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
-        piMapper.saveProject();
-        saveSettings();
-        ofLogNotice() << "--------> PROYECTO GUARDADO";
+        saveProjectFiles();
     }
     
     if ((key == 'z' || key == 'Z' || key == 26) && (ofGetKeyPressed(OF_KEY_COMMAND) || ofGetKeyPressed(OF_KEY_CONTROL))) {
@@ -364,6 +373,74 @@ void ofApp::saveSettings(){
     xmlMessage ="settings saved to xml!";
     setStatusMessage("Proyecto guardado");
     ofLog(OF_LOG_NOTICE,xmlMessage);
+}
+
+void ofApp::saveProjectFiles() {
+    auditProjectAssets();
+    if (!assetWarnings.empty()) {
+        setStatusMessage("Guardado bloqueado: restaurá los recursos faltantes primero");
+        ofLogWarning("BMapper") << "Project save skipped because resources are missing";
+        return;
+    }
+
+    piMapper.saveProject();
+    saveSettings();
+    ofLogNotice() << "--------> PROYECTO GUARDADO";
+}
+
+void ofApp::auditProjectAssets() {
+    assetWarnings.clear();
+    lastAssetAuditTime = ofGetElapsedTimeMillis();
+
+    ofxXmlSettings projectXml;
+    if (!projectXml.load("ofxpimapper.xml")) {
+        assetWarnings.push_back("No se pudo leer ofxpimapper.xml");
+        return;
+    }
+
+    const int presetCount = projectXml.getNumTags("surfaces");
+    for (int presetIndex = 0; presetIndex < presetCount; ++presetIndex) {
+        projectXml.pushTag("surfaces", presetIndex);
+        const int surfaceCount = projectXml.getNumTags("surface");
+        for (int surfaceIndex = 0; surfaceIndex < surfaceCount; ++surfaceIndex) {
+            projectXml.pushTag("surface", surfaceIndex);
+            if (projectXml.tagExists("source", 0)) {
+                projectXml.pushTag("source");
+                const std::string type = projectXml.getValue("source-type", "");
+                const std::string name = projectXml.getValue("source-name", "");
+                const std::string sound = projectXml.getValue("source-sound", "");
+                const std::string surfaceLabel = "superficie " + ofToString(surfaceIndex + 1);
+
+                if (type == "image" && !name.empty() && name != "none" &&
+                    !ofFile::doesFileExist(std::string(DEFAULT_IMAGES_DIR) + name)) {
+                    assetWarnings.push_back("Imagen no disponible: " + name + " (" + surfaceLabel + ")");
+                } else if (type == "video" && !name.empty() && name != "none" &&
+                           !ofFile::doesFileExist(std::string(DEFAULT_VIDEOS_DIR) + name)) {
+                    assetWarnings.push_back("Video no disponible: " + name + " (" + surfaceLabel + ")");
+                } else if (type == "fbo" && !name.empty() && name != "none" && name != "Video server") {
+                    ofDirectory sequenceDirectory(std::string(DEFAULT_SEQUENCES_DIR) + name);
+                    if (!sequenceDirectory.exists()) {
+                        assetWarnings.push_back("Secuencia no disponible: " + name + " (" + surfaceLabel + ")");
+                    } else {
+                        sequenceDirectory.allowExt("png");
+                        sequenceDirectory.listDir();
+                        if (sequenceDirectory.size() == 0) {
+                            assetWarnings.push_back("Secuencia sin imágenes PNG: " + name + " (" + surfaceLabel + ")");
+                        }
+                    }
+                } else if (type != "" && type != "none" && type != "image" && type != "video" && type != "fbo") {
+                    assetWarnings.push_back("Tipo de fuente no válido: " + type + " (" + surfaceLabel + ")");
+                }
+
+                if (!sound.empty() && !ofFile::doesFileExist(std::string(DEFAULT_SOUNDS_DIR) + sound)) {
+                    assetWarnings.push_back("Audio no disponible: " + sound + " (" + surfaceLabel + ")");
+                }
+                projectXml.popTag();
+            }
+            projectXml.popTag();
+        }
+        projectXml.popTag();
+    }
 }
 
 void ofApp::setStatusMessage(const std::string& message) {

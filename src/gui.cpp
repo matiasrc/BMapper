@@ -97,9 +97,7 @@ void ofApp::drawGui() {
     if (editMode && ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("|Aplicación|")) {
             if (ImGui::MenuItem("Guardar (cmd/ctrl + s)")) {
-                piMapper.saveProject();
-                saveSettings();
-                ofLogNotice() << "--------> PROYECTO GUARDADO";
+                saveProjectFiles();
             }
             ImGui::NewLine();
             if (ImGui::MenuItem("Undo ( cmd/ctrl + z)")) {
@@ -579,6 +577,20 @@ void ofApp::drawGui() {
                 ImGui::TextDisabled("Sin superficie seleccionada");
             }
 
+            if (assetWarnings.empty()) {
+                ImGui::TextColored(ImVec4(0.25f, 0.9f, 0.65f, 1.0f), "Proyecto: recursos verificados");
+            } else {
+                ImGui::Separator();
+                ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Recursos no disponibles: %d", static_cast<int>(assetWarnings.size()));
+                const int warningsToShow = std::min(4, static_cast<int>(assetWarnings.size()));
+                for (int i = 0; i < warningsToShow; ++i) {
+                    ImGui::BulletText("%s", assetWarnings[i].c_str());
+                }
+                if (static_cast<int>(assetWarnings.size()) > warningsToShow) {
+                    ImGui::TextDisabled("Y %d aviso(s) más en el registro.", static_cast<int>(assetWarnings.size()) - warningsToShow);
+                }
+            }
+
             if (!statusMessage.empty() && ofGetElapsedTimeMillis() <= statusMessageExpiresAt) {
                 ImGui::Separator();
                 ImGui::TextColored(ImVec4(0.95f, 0.82f, 0.35f, 1.0f), "%s", statusMessage.c_str());
@@ -589,4 +601,3 @@ void ofApp::drawGui() {
     
     gui.end();
 }
-
