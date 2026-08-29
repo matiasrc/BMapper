@@ -20,6 +20,31 @@ static void HelpMarker(const char* desc)
 
 void ofApp::drawGui() {
     gui.begin();
+
+    if (showDeleteSurfaceConfirmation) {
+        ImGui::OpenPopup("Confirmar eliminación de superficie");
+        showDeleteSurfaceConfirmation = false;
+    }
+
+    if (ImGui::BeginPopupModal("Confirmar eliminación de superficie", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("¿Eliminar la superficie %d?", pendingSurfaceDeletion + 1);
+        ImGui::TextDisabled("Podés deshacer esta acción con Cmd/Ctrl + Z.");
+        ImGui::Separator();
+
+        if (ImGui::Button("Eliminar", ImVec2(120, 0))) {
+            piMapper.eraseSurface(pendingSurfaceDeletion);
+            setStatusMessage("Superficie eliminada. Cmd/Ctrl + Z para deshacer");
+            pendingSurfaceDeletion = -1;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancelar", ImVec2(120, 0))) {
+            pendingSurfaceDeletion = -1;
+            setStatusMessage("Eliminación cancelada");
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
     
     // Popup de ayuda (siempre disponible, se muestra según showHelpPopup)
         if (showHelpPopup) {
@@ -73,7 +98,7 @@ void ofApp::drawGui() {
                         
                         "Duplicar superficie: d\n"
 
-                        "Borrar superficie: backspace\n\n"
+                        "Borrar superficie: backspace (con confirmación)\n\n"
                         
                         "CONTROL DE CONTENIDOS\n\n"
                         
@@ -197,10 +222,10 @@ void ofApp::drawGui() {
             }
             ImGui::SameLine(); HelpMarker("Reducir tamaño de superficie");
             ImGui::NewLine();
-            if (ImGui::MenuItem("Borrar (delete)")) {
-                piMapper.eraseSurface(piMapper.getSelectedSurface());
+            if (ImGui::MenuItem("Borrar (Backspace)")) {
+                requestDeleteSelectedSurface();
             }
-            ImGui::SameLine(); HelpMarker("Borrar superficie seleccionada");
+            ImGui::SameLine(); HelpMarker("Pide confirmación antes de borrar la superficie seleccionada");
             
             ImGui::EndMenu();
         }

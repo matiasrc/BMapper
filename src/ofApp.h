@@ -54,6 +54,7 @@ public:
     void saveProjectFiles();
     bool createProjectBackup();
     void pruneProjectBackups();
+    void requestDeleteSelectedSurface();
     void auditProjectAssets();
     void setStatusMessage(const std::string& message);
     ofxXmlSettings          XML;
@@ -93,4 +94,6 @@ private:
     std::vector<std::string> assetWarnings;
     uint64_t lastAssetAuditTime = 0;
     static constexpr std::size_t MAX_PROJECT_BACKUPS = 10;
+    bool showDeleteSurfaceConfirmation = false;
+    int pendingSurfaceDeletion = -1;
 };

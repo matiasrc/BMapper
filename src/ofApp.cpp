@@ -190,8 +190,7 @@ void ofApp::keyPressed(int key) {
                 piMapper.duplicateSurface();
                 break;
             case OF_KEY_BACKSPACE:
-                int selectedSurface = piMapper.getSelectedSurface();
-                piMapper.eraseSurface(selectedSurface);
+                requestDeleteSelectedSurface();
                 break;
         }
     } else if (!editMode) {
@@ -213,6 +212,17 @@ void ofApp::keyPressed(int key) {
 
 void ofApp::keyReleased(int key) {
     piMapper.keyReleased(key);
+}
+
+void ofApp::requestDeleteSelectedSurface() {
+    const int selectedSurface = piMapper.getSelectedSurface();
+    if (selectedSurface < 0 || selectedSurface >= piMapper.getNumSurfaces()) {
+        setStatusMessage("No hay una superficie seleccionada para borrar");
+        return;
+    }
+
+    pendingSurfaceDeletion = selectedSurface;
+    showDeleteSurfaceConfirmation = true;
 }
 
 void ofApp::mouseDragged(int x, int y, int button) {
