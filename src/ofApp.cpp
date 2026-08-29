@@ -17,6 +17,8 @@ void ofApp::setup() {
     loadData();
     
     piMapper.setup();
+    piMapper.setAutoSaveEnabled(false);
+    lastProjectAutosaveTime = ofGetElapsedTimeMillis();
     auditProjectAssets();
     if (assetWarnings.empty()) {
         setStatusMessage("Proyecto verificado");
@@ -34,6 +36,10 @@ void ofApp::update(){
     const uint64_t now = ofGetElapsedTimeMillis();
     if (now - lastAssetAuditTime >= 1000) {
         auditProjectAssets();
+    }
+
+    if (editMode && now - lastProjectAutosaveTime >= PROJECT_AUTOSAVE_INTERVAL_MS) {
+        saveProjectFiles(true);
     }
 
     int processedMessages = 0;
@@ -81,6 +87,7 @@ void ofApp::keyPressed(int key) {
         editMode = !editMode;
         if(editMode){
             piMapper.setMode(ofx::piMapper::MAPPING_MODE);
+            lastProjectAutosaveTime = ofGetElapsedTimeMillis();
             setStatusMessage("Modo edición activo");
         }else{
             piMapper.setMode(ofx::piMapper::PRESENTATION_MODE);
@@ -399,22 +406,32 @@ void ofApp::saveSettings(){
     ofLog(OF_LOG_NOTICE,xmlMessage);
 }
 
-void ofApp::saveProjectFiles() {
+void ofApp::saveProjectFiles(bool automatic) {
     auditProjectAssets();
     if (!assetWarnings.empty()) {
-        setStatusMessage("Guardado bloqueado: restaurá los recursos faltantes primero");
+        setStatusMessage(automatic
+            ? "Autoguardado bloqueado: restaurá los recursos faltantes primero"
+            : "Guardado bloqueado: restaurá los recursos faltantes primero");
         ofLogWarning("BMapper") << "Project save skipped because resources are missing";
+        lastProjectAutosaveTime = ofGetElapsedTimeMillis();
         return;
     }
 
     if (!createProjectBackup()) {
-        setStatusMessage("Guardado cancelado: no se pudo crear un respaldo seguro");
+        setStatusMessage(automatic
+            ? "Autoguardado cancelado: no se pudo crear un respaldo seguro"
+            : "Guardado cancelado: no se pudo crear un respaldo seguro");
         ofLogError("BMapper") << "Project save skipped because backup creation failed";
+        lastProjectAutosaveTime = ofGetElapsedTimeMillis();
         return;
     }
 
     piMapper.saveProject();
     saveSettings();
+    lastProjectAutosaveTime = ofGetElapsedTimeMillis();
+    if (automatic) {
+        setStatusMessage("Autoguardado realizado");
+    }
     ofLogNotice() << "--------> PROYECTO GUARDADO";
 }
 

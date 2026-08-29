@@ -51,7 +51,7 @@ public:
     //----------------- SETTINGS -------------------
     void loadSettings();
     void saveSettings();
-    void saveProjectFiles();
+    void saveProjectFiles(bool automatic = false);
     bool createProjectBackup();
     void pruneProjectBackups();
     void requestDeleteSelectedSurface();
@@ -93,6 +93,8 @@ private:
     uint64_t statusMessageExpiresAt = 0;
     std::vector<std::string> assetWarnings;
     uint64_t lastAssetAuditTime = 0;
+    uint64_t lastProjectAutosaveTime = 0;
+    static constexpr uint64_t PROJECT_AUTOSAVE_INTERVAL_MS = 60000;
     static constexpr std::size_t MAX_PROJECT_BACKUPS = 10;
     bool showDeleteSurfaceConfirmation = false;
     int pendingSurfaceDeletion = -1;
