@@ -548,8 +548,12 @@ void ofApp::drawGui() {
                     if (isReserved) {
                         ImGui::OpenPopup("Tecla Reservada");
                     } else {
-                        // Si no está reservada, asignar la tecla a la superficie
                         surface->setAssignedKey(keyBuffer[0]);
+                        if (keyBuffer[0] == '\0') {
+                            setStatusMessage("Tecla liberada");
+                        } else {
+                            setStatusMessage(std::string("Tecla asignada: ") + keyBuffer[0]);
+                        }
                     }
                 }
 
@@ -563,6 +567,30 @@ void ofApp::drawGui() {
                 }
                 
                 ImGui::SameLine();  HelpMarker("Tecla para ejecutar el 'play' del video o animación");
+                const char assignedKey = surface->getAssignedKey();
+                if (assignedKey != '\0') {
+                    int keyAssignmentCount = 0;
+                    int playableKeyAssignmentCount = 0;
+                    for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
+                        auto* mappedSurface = piMapper.getSurfaceAt(i);
+                        if (mappedSurface != nullptr && mappedSurface->getAssignedKey() == assignedKey) {
+                            ++keyAssignmentCount;
+                            const auto sourceType = mappedSurface->getSource()->getType();
+                            if (sourceType == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
+                                sourceType == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
+                                ++playableKeyAssignmentCount;
+                            }
+                        }
+                    }
+                    if (playableKeyAssignmentCount > 1) {
+                        ImGui::TextColored(ImVec4(0.95f, 0.82f, 0.35f, 1.0f),
+                            "La tecla '%c' inicia %d contenidos reproducibles.", assignedKey, playableKeyAssignmentCount);
+                    }
+                    if (keyAssignmentCount > playableKeyAssignmentCount) {
+                        ImGui::TextDisabled("También está asignada en %d superficie(s) estática(s).",
+                            keyAssignmentCount - playableKeyAssignmentCount);
+                    }
+                }
                 
                 // Crear un búfer temporal para almacenar el texto ingresado
                 char oscAddressBuffer[256] = {};
@@ -575,10 +603,33 @@ void ofApp::drawGui() {
                     std::string newOscAddress = oscAddressBuffer;
                     if (newOscAddress.empty() || newOscAddress.front() == '/') {
                         surface->setOscAddress(newOscAddress);
+                        setStatusMessage(newOscAddress.empty() ? "Dirección OSC liberada" : "Dirección OSC asignada: " + newOscAddress);
                     }
                 }
                 if (oscAddressBuffer[0] != '\0' && oscAddressBuffer[0] != '/') {
                     ImGui::TextDisabled("La dirección OSC debe comenzar con /.");
+                } else if (!surface->getOscAddress().empty()) {
+                    int oscAssignmentCount = 0;
+                    int playableOscAssignmentCount = 0;
+                    for (int i = 0; i < piMapper.getNumSurfaces(); ++i) {
+                        auto* mappedSurface = piMapper.getSurfaceAt(i);
+                        if (mappedSurface != nullptr && mappedSurface->getOscAddress() == surface->getOscAddress()) {
+                            ++oscAssignmentCount;
+                            const auto sourceType = mappedSurface->getSource()->getType();
+                            if (sourceType == ofx::piMapper::SourceType::SOURCE_TYPE_VIDEO ||
+                                sourceType == ofx::piMapper::SourceType::SOURCE_TYPE_FBO) {
+                                ++playableOscAssignmentCount;
+                            }
+                        }
+                    }
+                    if (playableOscAssignmentCount > 1) {
+                        ImGui::TextColored(ImVec4(0.95f, 0.82f, 0.35f, 1.0f),
+                            "La dirección OSC controla %d contenidos reproducibles.", playableOscAssignmentCount);
+                    }
+                    if (oscAssignmentCount > playableOscAssignmentCount) {
+                        ImGui::TextDisabled("También está asignada en %d superficie(s) estática(s).",
+                            oscAssignmentCount - playableOscAssignmentCount);
+                    }
                 }
             }
             
