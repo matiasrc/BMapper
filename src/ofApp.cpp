@@ -397,9 +397,85 @@ void ofApp::saveProjectFiles() {
         return;
     }
 
+    if (!createProjectBackup()) {
+        setStatusMessage("Guardado cancelado: no se pudo crear un respaldo seguro");
+        ofLogError("BMapper") << "Project save skipped because backup creation failed";
+        return;
+    }
+
     piMapper.saveProject();
     saveSettings();
     ofLogNotice() << "--------> PROYECTO GUARDADO";
+}
+
+bool ofApp::createProjectBackup() {
+    const std::vector<std::string> projectFiles = {
+        "ofxpimapper.xml",
+        "mySettings.xml"
+    };
+
+    bool anyProjectFileExists = false;
+    bool allProjectFilesExist = true;
+    for (const auto& fileName : projectFiles) {
+        const bool exists = ofFile::doesFileExist(fileName);
+        anyProjectFileExists = anyProjectFileExists || exists;
+        allProjectFilesExist = allProjectFilesExist && exists;
+    }
+
+    // The first save of a new project has nothing to preserve yet.
+    if (!anyProjectFileExists) {
+        return true;
+    }
+
+    // Never overwrite a partial project without a complete recovery point.
+    if (!allProjectFilesExist) {
+        ofLogError("BMapper") << "Backup skipped because one project settings file is missing";
+        return false;
+    }
+
+    const std::string backupPath = ".backups/" + ofGetTimestampString();
+    ofDirectory backupDirectory(backupPath);
+    if (!backupDirectory.create(true)) {
+        ofLogError("BMapper") << "Could not create backup directory: " << backupPath;
+        return false;
+    }
+
+    for (const auto& fileName : projectFiles) {
+        if (!ofFile::copyFromTo(fileName, backupPath + "/" + fileName)) {
+            ofLogError("BMapper") << "Could not copy project file to backup: " << fileName;
+            backupDirectory.remove(true);
+            return false;
+        }
+    }
+
+    pruneProjectBackups();
+    ofLogNotice("BMapper") << "Project backup created: " << backupPath;
+    return true;
+}
+
+void ofApp::pruneProjectBackups() {
+    ofDirectory backupRoot(".backups");
+    backupRoot.listDir();
+    backupRoot.sort();
+
+    std::vector<std::string> backupPaths;
+    for (std::size_t i = 0; i < backupRoot.size(); ++i) {
+        const ofFile backup = backupRoot.getFile(i);
+        if (backup.isDirectory()) {
+            backupPaths.push_back(backup.getAbsolutePath());
+        }
+    }
+
+    const std::size_t backupsToRemove = backupPaths.size() > MAX_PROJECT_BACKUPS
+        ? backupPaths.size() - MAX_PROJECT_BACKUPS
+        : 0;
+
+    for (std::size_t i = 0; i < backupsToRemove; ++i) {
+        ofDirectory oldBackup(backupPaths[i]);
+        if (!oldBackup.remove(true)) {
+            ofLogWarning("BMapper") << "Could not remove old backup: " << backupPaths[i];
+        }
+    }
 }
 
 void ofApp::auditProjectAssets() {

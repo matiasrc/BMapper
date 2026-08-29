@@ -52,6 +52,8 @@ public:
     void loadSettings();
     void saveSettings();
     void saveProjectFiles();
+    bool createProjectBackup();
+    void pruneProjectBackups();
     void auditProjectAssets();
     void setStatusMessage(const std::string& message);
     ofxXmlSettings          XML;
@@ -90,4 +92,5 @@ private:
     uint64_t statusMessageExpiresAt = 0;
     std::vector<std::string> assetWarnings;
     uint64_t lastAssetAuditTime = 0;
+    static constexpr std::size_t MAX_PROJECT_BACKUPS = 10;
 };

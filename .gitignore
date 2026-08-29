@@ -31,3 +31,6 @@ BMapper.vcxproj.user
 
 # VS Code IntelliSense cache
 .vscode/browse.db*
+
+# Local recoverable copies created by BMapper before saving a project.
+/bin/data/.backups/
