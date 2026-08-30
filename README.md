@@ -1,80 +1,109 @@
 # BMapper
-Software para video mapping, realizado con [OpenFrameworks](https://openframeworks.cc/), basado en [ofxPiMapper](https://ofxpimapper.com/) desarrollado por Krisjanis Rijnieks. 
 
+Aplicación de video mapping desarrollada con
+[openFrameworks](https://openframeworks.cc/) y basada en
+[ofxPiMapper](https://ofxpimapper.com/). Permite asignar imágenes, videos,
+secuencias PNG y entradas Syphon/Spout a superficies de mapping, con control
+por teclado y OSC.
 
-## Dependencias
+Esta versión está preparada para clases, pruebas y proyectos de mapping en
+macOS. El proyecto usa un fork propio de
+[ofxPiMapper](https://github.com/matiasrc/ofxPiMapper) con adaptaciones para
+BMapper.
 
-ofxGui (included in Of Core)
+## Funciones principales
 
-ofxOsc (Incluido en OF / included in OF Core)
+- Crear y editar superficies rectangulares, triangulares, circulares,
+  hexagonales y de grilla.
+- Asignar imágenes, videos, secuencias PNG con transparencia y audio.
+- Ejecutar contenidos mediante teclas asignadas o mensajes OSC.
+- Recibir fuentes Syphon en macOS y Spout en Windows.
+- Trabajar en modo edición o presentación, con pantalla completa.
+- Guardar el mapping y la configuración OSC de forma protegida, con respaldos
+  recuperables.
+- Cargar varias secuencias PNG de forma fluida: la decodificación se realiza
+  fuera del render y prioriza los fotogramas de todas las fuentes activas.
 
-ofxXmlSettings (included in Of Core)
+## Requisitos
 
-[ofxSpout](https://github.com/elliotwoods/ofxSpout)
+- openFrameworks 0.12.0.
+- El proyecto debe permanecer en `apps/myApps/BMapper` dentro del árbol de
+  openFrameworks, porque el Makefile usa rutas relativas hacia sus librerías y
+  addons.
+- Los addons declarados en `addons.make`: `ofxGui`, `ofxImGui`, `ofxOsc`,
+  `ofxXmlSettings`, `ofxPiMapper`, `ofxSyphon` y `ofxSpout`.
 
-[ofxSyphon](https://github.com/astellato/ofxSyphon)
+En macOS, Syphon es la entrada de video activa. Spout está incluido para la
+compilación en Windows.
 
-[ofxImGui](https://github.com/jvcleave/ofxImGui)
+## Compilar en macOS con VS Code
 
-[ofxPiMapper fork](https://github.com/matiasrc/ofxPiMapper/tree/main) 
+1. Abrir `BMapper.code-workspace` en Visual Studio Code.
+2. Ejecutar la tarea **Build RELEASE**.
+3. La aplicación se abre como `bin/BMapper.app`.
 
+La instalación inicial y los ajustes necesarios de openFrameworks y Syphon
+están documentados en [Compilar BMapper en macOS con VS Code](docs/BUILD_MACOS_VSCODE.md).
 
-## Ayuda
-                        
-### Contenidos
-Los contenidos (imagenes, videos, secuencias, sonidos) deben agregarse en la carpeta 'data/sources'. Se pueden agregar imágenes (jpg, png, bmp, gif), videos (mov, mp4, avi), secuencias de PNG con transparencia, sonidos (wav, mp3, aiff, aif). Una vez agradados, al abrirse nuevamente la aplicaión, estarán disponibles para ser asignados a una superficie. 
+Usar **Release** para pruebas y clases. El modo Debug puede consumir mucho más
+recursos al procesar secuencias grandes.
 
-### Accesos rápidos de teclaro
-#### Generales
-Función | tecla
-:--- | :---
-Modo edición | ctrl / cmd + e  
-Guardar | ctrl / cmd + s  
-Deshacer | ctrl / cmd + z  
-Pantalla completa | ctrl / cmd + f  
-Modo presentación | ctrl / cmd + p  
+## Uso rápido
 
-#### Modificar superficies
-Función | tecla
-:--- | :---
-Ocultar o ver capas | l  
-Agrandar superficie seleccionada | +  
-Achicar superficie seleccionada  | -                            
-Seleccionar superficie siguiente |  .  
-Seleccionar superficie anterior |  ,  
-Seleccionar vértice siguiente |  <  
-Seleccionar vértice anterior |  >  
+Los contenidos se copian en `bin/data/sources/`:
 
-Mover vértice o superficies (una vez seleccionados): flecha o flechas + shift (para hacerlo por pasos más grandes)
+| Contenido | Carpeta | Formatos |
+| --- | --- | --- |
+| Imágenes | `imagenes/` | jpg, png, bmp, gif |
+| Videos | `videos/` | mp4, mov, avi |
+| Secuencias | `secuencias/<nombre>/` | PNG ordenados alfabéticamente |
+| Audio | `sonidos/` | wav, aiff, aif, mp3 |
 
-#### Solo en modo EDICIÓN:
-Función | tecla
-:--- | :---
-Crear superficie triangular | t  
-Crear superficie rectangular | q  
-Crear superficie circular | c  
-Crear superficie hexagonal | h  
-Crear superficie grilla | g  
-Duplicar superficie | d  
-Borrar superficie | backspace  
-                        
-### Control de contenidos
-Tanto los videos como las secuencias de png se pueden ejecutar con los comandos: play, stop, pause y resume, tanto desde el menú de cada superficie como desde afuera a través de mensajes OSC.  
-También se pueden reproducir (play) a partir de una tecla del teclado.  
-                        
-OSC permite enviar mensajes a una superficie, usando etiquetas definidas para comandos como `/superficie1 play`   
+Después de agregar material, elegir **Aplicación → Actualizar recursos**. Para
+asignar fuentes, crear o seleccionar una superficie en modo edición y usar el
+panel de fuentes.
 
-Lo mismo puede hacerse con el resto de los controles:  
-                        `/superficie1 stop`  
-                        `/superficie1 pause`     
-                        `/superficie1 resume`      
+Atajos principales:
 
-## TODO
+| Acción | Atajo |
+| --- | --- |
+| Cambiar modo edición | `Cmd/Ctrl + E` |
+| Guardar | `Cmd/Ctrl + S` |
+| Deshacer | `Cmd/Ctrl + Z` |
+| Alternar pantalla completa | `Cmd/Ctrl + F` |
+| Entrar en presentación | `Cmd/Ctrl + P` |
 
-- Help
-- Drag and drop de contenidos en las superficies
-- Entrada por NDI
-- Filtros por Shaders
+En presentación la edición queda bloqueada, pero siguen activos OSC y las
+teclas asignadas a los contenidos.
 
-## PRE RELEASES
-[Binaries / ejecutables](https://github.com/matiasrc/BMapper/releases/tag/v.0.1) OSX y WIN
+La referencia completa de operación —incluyendo OSC, guardado, recuperación,
+transparencia, rendimiento y uso con dos monitores— está en
+[Uso operativo de BMapper](docs/USO_OPERATIVO.md).
+
+## Notas importantes
+
+- Las zonas transparentes de una secuencia PNG dejan ver las superficies que
+  están por debajo; usar PNG que realmente incluyan canal alfa.
+- Dos superficies que usan la misma secuencia comparten reproducción, loop y
+  audio. Es intencional para contenidos sincronizados.
+- Antes de guardar, BMapper verifica que las fuentes asignadas existan. Si falta
+  un archivo, bloquea el guardado para evitar que se pierda la referencia.
+- Cada guardado crea una copia de `ofxpimapper.xml` y `mySettings.xml` en
+  `bin/data/.backups/`; se conservan las diez más recientes.
+- Para proyectar por una segunda pantalla, usar escritorio extendido, mover la
+  ventana al proyector y entrar en presentación. Actualmente no hay selector de
+  monitor ni una ventana de control independiente.
+
+## Próximas mejoras
+
+- Elegir y recordar el monitor de proyección.
+- Ventana de control independiente de la salida de proyección.
+- Importar contenido mediante arrastrar y soltar.
+- Filtros y shaders por fuente.
+- Recorte y continuidad de una fuente entre varias superficies.
+
+## Créditos
+
+Desarrollado por Matías Romero Costas / Biopus.
+
+Basado en ofxPiMapper, desarrollado originalmente por Krisjanis Rijnieks.
