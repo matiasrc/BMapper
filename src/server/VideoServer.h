@@ -36,6 +36,10 @@
  		int dirIdx;
      
         #elif defined(TARGET_WIN32)
+        // La interfaz no accede al receptor directamente: estas funciones
+        // mantienen a Spout encapsulado en la fuente de video multiplataforma.
+        bool selectSpoutSender();
+        std::string getSpoutSenderName() const;
         ofxSpout::Receiver receiver;
         ofTexture texture;
         #endif

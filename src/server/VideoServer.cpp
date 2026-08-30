@@ -87,6 +87,16 @@
 
 #endif
 
+#if defined(TARGET_WIN32)
+bool VideoServer::selectSpoutSender() {
+    return receiver.selectSenderPanel();
+}
+
+std::string VideoServer::getSpoutSenderName() const {
+    return receiver.getChannelName();
+}
+#endif
+
  // Don't do any drawing here
 void VideoServer::update(){
 #if defined(TARGET_OSX)

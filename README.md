@@ -33,8 +33,9 @@ BMapper.
 - Los addons declarados en `addons.make`: `ofxGui`, `ofxImGui`, `ofxOsc`,
   `ofxXmlSettings`, `ofxPiMapper`, `ofxSyphon` y `ofxSpout`.
 
-En macOS, Syphon es la entrada de video activa. Spout está incluido para la
-compilación en Windows.
+En macOS, Syphon es la entrada de video activa. El código de recepción Spout
+está implementado para Windows, pero la compilación Windows debe generarse y
+validarse allí antes de considerarse soportada.
 
 ## Compilar en macOS con VS Code
 
@@ -93,6 +94,9 @@ transparencia, rendimiento y uso con dos monitores— está en
 - Para proyectar por una segunda pantalla, usar escritorio extendido, mover la
   ventana al proyector y entrar en presentación. Actualmente no hay selector de
   monitor ni una ventana de control independiente.
+- En Windows, la fuente externa se presenta como **Spout** e incluye un selector
+  nativo de sender. La integración necesita una validación completa en una PC
+  Windows antes de distribuir ejecutables para esa plataforma.
 
 ## Próximas mejoras
 

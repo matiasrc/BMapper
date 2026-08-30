@@ -407,11 +407,18 @@ void ofApp::drawGui() {
                     ImGui::EndMenu();
                 }
 
-                const bool isSyphonSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO &&
-                                              selectedSource->getName() == "Video server";
-                if (ImGui::MenuItem("Syphon", nullptr, isSyphonSelected, !isSyphonSelected)) {
+                // La misma fuente FBO representa Syphon en macOS y Spout en Windows.
+                // El nombre visible debe coincidir con la tecnología disponible.
+                #if defined(TARGET_WIN32)
+                constexpr const char* externalVideoLabel = "Spout";
+                #else
+                constexpr const char* externalVideoLabel = "Syphon";
+                #endif
+                const bool isExternalVideoSelected = selectedSource->getType() == ofx::piMapper::SourceType::SOURCE_TYPE_FBO &&
+                                                     selectedSource->getName() == "Video server";
+                if (ImGui::MenuItem(externalVideoLabel, nullptr, isExternalVideoSelected, !isExternalVideoSelected)) {
                     piMapper.setFboSource("Video server");
-                    setStatusMessage("Fuente Syphon asignada");
+                    setStatusMessage(std::string("Fuente ") + externalVideoLabel + " asignada");
                     sourceChanged = true;
                 }
                 ImGui::EndMenu();
@@ -441,6 +448,18 @@ void ofApp::drawGui() {
                                 }
                             }
                             ImGui::EndCombo();
+                        }
+                    }
+                    #elif defined(TARGET_WIN32)
+                    const std::string senderName = videoServer.getSpoutSenderName();
+                    ImGui::Text("Fuente Spout: %s", senderName.empty() ? "Buscando sender..." : senderName.c_str());
+                    if (ImGui::Button("Elegir fuente Spout")) {
+                        // Spout abre su selector nativo sólo ante una acción explícita
+                        // del usuario; así la aplicación no interrumpe una presentación.
+                        if (videoServer.selectSpoutSender()) {
+                            setStatusMessage("Selector de Spout abierto");
+                        } else {
+                            setStatusMessage("No se pudo abrir el selector de Spout");
                         }
                     }
                     #endif
