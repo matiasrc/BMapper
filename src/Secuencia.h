@@ -4,8 +4,11 @@
 #include "FboSource.h"
 #include "ofSoundPlayer.h"
 
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+struct SequenceFrameMailbox;
 
 class Secuencia : public ofx::piMapper::FboSource {
 public:
@@ -34,31 +37,52 @@ public:
 
     size_t getFrameCount() const;
     size_t getCachedFrameCount() const;
+    size_t getQueuedFrameCount() const;
+    bool isPreparingPlayback() const;
 
     std::string getName();
     void setName(std::string newName);
 
 private:
-    static constexpr size_t INITIAL_CACHE_FRAMES = 8;
-    static constexpr size_t CACHE_AHEAD_FRAMES = 12;
-    static constexpr size_t CACHE_BEHIND_FRAMES = 3;
-    static constexpr size_t CACHE_LOADS_PER_UPDATE = 1;
+    // Ventana de cuadros decodificados que se mantiene alrededor del cuadro actual.
+    // Los valores están pensados para sostener aproximadamente 0,75 s a 24 fps.
+    static constexpr size_t CACHE_AHEAD_FRAMES = 18;
+    static constexpr size_t CACHE_BEHIND_FRAMES = 2;
+    // Antes de reproducir se espera este mínimo para que audio e imagen comiencen estables.
+    static constexpr size_t START_BUFFER_FRAMES = 6;
+    // Limita el trabajo de incorporar resultados en cada update del hilo principal.
+    static constexpr size_t MAX_DECODED_FRAMES_PER_UPDATE = 8;
 
     std::vector<std::string> framePaths;
-    std::unordered_map<size_t, ofImage> frameCache;
+    // Cuadros ya decodificados en memoria RAM. No tienen textura propia de OpenGL.
+    std::unordered_map<size_t, ofPixels> frameCache;
     std::unordered_set<size_t> failedFrames;
+    // Cuadros pedidos al cargador y cuadros que siguen siendo útiles para esta reproducción.
+    std::unordered_set<size_t> queuedFrames;
+    std::unordered_set<size_t> wantedFrames;
+    std::shared_ptr<SequenceFrameMailbox> frameMailbox;
+    // Única textura GPU reutilizada para mostrar el cuadro actual de la secuencia.
+    ofTexture frameTexture;
     ofSoundPlayer soundPlayer;
     int currentFrame;
     float frameDuration; // Duration of each frame in milliseconds
     bool isPlaying;
     bool isPaused;
+    // Estado transitorio: el usuario pidió Play, pero todavía se está llenando el búfer.
+    bool isPreparing;
     bool isLooping;
     int speed; // Playback speed in fps
     uint64_t lastUpdateTime; // Last update time in milliseconds
+    // Identifica la generación de carga vigente; evita aceptar cuadros de un Play anterior.
+    uint64_t loadGeneration;
     std::string audioTrack;
 
-    bool loadFrame(size_t frameIndex);
-    void refreshFrameCache(size_t centerFrame, size_t loadBudget);
+    void processDecodedFrames();
+    void resetFrameMailbox();
+    void requestFrameWindow(size_t centerFrame);
+    void queueFrame(size_t frameIndex, size_t priority = 0);
+    void uploadFrame(size_t frameIndex);
+    bool hasStartBuffer() const;
     size_t getFrameIndexWithOffset(size_t frameIndex, int offset) const;
     void clear() override;
 };
