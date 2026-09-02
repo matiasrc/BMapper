@@ -525,8 +525,6 @@ void Secuencia::queueFrame(size_t frameIndex, size_t priority) {
     request.generation = loadGeneration;
     request.frameIndex = frameIndex;
     request.path = framePaths[frameIndex];
-    request.targetWidth = static_cast<int>(getWidth());
-    request.targetHeight = static_cast<int>(getHeight());
     request.priority = priority;
     request.mailbox = frameMailbox;
     queuedFrames.insert(frameIndex);
