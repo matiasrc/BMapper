@@ -30,8 +30,6 @@ struct SequenceFrameRequest {
     uint64_t generation = 0;
     size_t frameIndex = 0;
     std::string path;
-    int targetWidth = 0;
-    int targetHeight = 0;
     // Menor prioridad numérica significa que el cuadro se necesita antes.
     size_t priority = 0;
     uint64_t order = 0;
@@ -44,10 +42,8 @@ public:
         // El cargador es compartido por todas las secuencias. Usa entre dos y
         // cuatro hilos para atender varias animaciones sin saturar el equipo.
         const unsigned int hardwareThreads = std::thread::hardware_concurrency();
-        const size_t workerCount = std::clamp(
-            hardwareThreads == 0 ? MIN_WORKERS : static_cast<size_t>(hardwareThreads / 2),
-            MIN_WORKERS,
-            MAX_WORKERS);
+        const size_t calculatedWorkers = hardwareThreads == 0 ? MIN_WORKERS : static_cast<size_t>(hardwareThreads / 2);
+        const size_t workerCount = std::max(MIN_WORKERS, std::min(calculatedWorkers, MAX_WORKERS));
         workers.reserve(workerCount);
         for (size_t i = 0; i < workerCount; ++i) {
             workers.push_back(std::make_unique<Worker>(*this));
@@ -108,14 +104,6 @@ private:
                 decodedFrame.generation = request.generation;
                 decodedFrame.frameIndex = request.frameIndex;
                 decodedFrame.loaded = ofLoadImage(decodedFrame.pixels, request.path);
-
-                // El FBO de BMapper trabaja a 800×600. Reducir los píxeles antes
-                // de guardarlos evita cachear y subir a GPU información que no se verá.
-                if (decodedFrame.loaded && request.targetWidth > 0 && request.targetHeight > 0 &&
-                    (decodedFrame.pixels.getWidth() != request.targetWidth ||
-                     decodedFrame.pixels.getHeight() != request.targetHeight)) {
-                    decodedFrame.pixels.resize(request.targetWidth, request.targetHeight);
-                }
 
                 if (!request.mailbox->cancelled.load()) {
                     request.mailbox->decodedFrames.send(std::move(decodedFrame));
@@ -265,17 +253,10 @@ bool Secuencia::loadSequence(const std::string& folderPath) {
         ofLogError("ImageSequenceSource") << "Failed to load first image: " << loadedPaths.front();
         return false;
     }
-    // El primer cuadro actúa como imagen de espera y se ajusta al mismo tamaño
-    // interno del FBO. Los PNG originales del proyecto no se alteran.
-    if (getWidth() > 0 && getHeight() > 0 &&
-        (firstFrame.getWidth() != static_cast<int>(getWidth()) ||
-         firstFrame.getHeight() != static_cast<int>(getHeight()))) {
-        firstFrame.resize(static_cast<int>(getWidth()), static_cast<int>(getHeight()));
-    }
 
     clear();
     framePaths = std::move(loadedPaths);
-    frameCache.emplace(0, std::move(firstFrame));
+    frameCache[0] = std::move(firstFrame);
     currentFrame = 0;
     frameMailbox = std::make_shared<SequenceFrameMailbox>();
     wantedFrames.insert(0);
@@ -544,8 +525,6 @@ void Secuencia::queueFrame(size_t frameIndex, size_t priority) {
     request.generation = loadGeneration;
     request.frameIndex = frameIndex;
     request.path = framePaths[frameIndex];
-    request.targetWidth = static_cast<int>(getWidth());
-    request.targetHeight = static_cast<int>(getHeight());
     request.priority = priority;
     request.mailbox = frameMailbox;
     queuedFrames.insert(frameIndex);
