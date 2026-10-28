@@ -1,0 +1,169 @@
+name: Build Windows
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version or tag string"
+        required: false
+        type: string
+        default: "dev"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version or tag string"
+        required: false
+        type: string
+        default: "dev"
+
+jobs:
+  build-windows:
+    name: Build Windows (x64)
+    runs-on: windows-latest
+    env:
+      OF_VERSION: "0.12.0"
+      OF_ROOT: "C:\\openFrameworks"
+      PROJECT_DIR: "C:\\openFrameworks\\apps\\myApps\\BMapper"
+
+    steps:
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache openFrameworks
+        id: cache-of
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OF_ROOT }}
+          key: of-${{ env.OF_VERSION }}-vs-v1
+
+      - name: Download & Extract openFrameworks
+        if: steps.cache-of.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/openframeworks/openFrameworks/releases/download/${{ env.OF_VERSION }}/of_v${{ env.OF_VERSION }}_vs_release.zip"
+          $zipPath = "$env:RUNNER_TEMP\of_release.zip"
+          $extractTemp = "$env:RUNNER_TEMP\of_extract"
+
+          Write-Host "Downloading openFrameworks from $url..."
+          Invoke-WebRequest -Uri $url -OutFile $zipPath
+
+          Write-Host "Extracting openFrameworks to temporary location..."
+          New-Item -ItemType Directory -Force -Path $extractTemp | Out-Null
+          Expand-Archive -Path $zipPath -DestinationPath $extractTemp -Force
+
+          # The zip contains a top-level directory (e.g. of_v0.12.0_vs_release)
+          $innerFolder = Get-ChildItem -Path $extractTemp -Directory | Select-Object -First 1
+          Write-Host "Moving contents from $($innerFolder.FullName) to ${{ env.OF_ROOT }}..."
+          New-Item -ItemType Directory -Force -Path "${{ env.OF_ROOT }}" | Out-Null
+          Move-Item -Path "$($innerFolder.FullName)\*" -Destination "${{ env.OF_ROOT }}" -Force
+
+          Remove-Item -Path $zipPath -Force
+          Remove-Item -Path $extractTemp -Recurse -Force
+          Write-Host "openFrameworks setup completed at ${{ env.OF_ROOT }}."
+
+      - name: Checkout BMapper
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.PROJECT_DIR }}
+
+      - name: Fetch External Addons
+        shell: pwsh
+        working-directory: ${{ env.OF_ROOT }}\addons
+        run: |
+          Write-Host "Cloning external addons into addons directory..."
+
+          if (-not (Test-Path "ofxPiMapper")) {
+            git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/matiasrc/ofxPiMapper ofxPiMapper
+          }
+
+          if (-not (Test-Path "ofxImGui")) {
+            git clone --depth 1 https://github.com/jvcleave/ofxImGui ofxImGui
+          }
+
+          if (-not (Test-Path "ofxSpout")) {
+            git clone --depth 1 https://github.com/leadedge/ofxSpout ofxSpout
+          }
+
+      - name: Generate Visual Studio Solution
+        shell: pwsh
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          # Syphon is macOS-only; filter it out from addons.make on Windows
+          if (Test-Path "addons.make") {
+            (Get-Content "addons.make") | Where-Object { $_ -notmatch "ofxSyphon" } | Set-Content "addons.make"
+            Write-Host "addons.make prepared for Windows:"
+            Get-Content "addons.make"
+          }
+
+          # Locate projectGenerator executable inside openFrameworks
+          $pg = (Get-ChildItem -Path "${{ env.OF_ROOT }}" -Recurse -Filter "projectGenerator.exe" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          if (-not $pg) {
+            Write-Error "Could not find projectGenerator.exe in ${{ env.OF_ROOT }}"
+            exit 1
+          }
+          Write-Host "Found projectGenerator at: $pg"
+
+          # Execute projectGenerator for Visual Studio
+          & $pg -o"${{ env.OF_ROOT }}" -p"vs" "${{ env.PROJECT_DIR }}"
+          Write-Host "Visual Studio project generation complete."
+
+      - name: Build BMapper (Release x64)
+        shell: pwsh
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          Write-Host "Building BMapper.sln with MSBuild (Release x64)..."
+          msbuild BMapper.sln /p:Configuration=Release /p:Platform=x64 /m /verbosity:minimal
+
+      - name: Package Windows Release Bundle
+        shell: pwsh
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          $packageDir = "$env:RUNNER_TEMP\package\BMapper"
+          New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
+
+          Write-Host "Copying binary and runtime files to package directory..."
+          Copy-Item -Path "bin\BMapper.exe" -Destination $packageDir -Force
+
+          # Copy data assets folder
+          if (Test-Path "bin\data") {
+            Copy-Item -Path "bin\data" -Destination "$packageDir\data" -Recurse -Force
+          }
+
+          # Copy all DLLs from bin
+          Get-ChildItem -Path "bin" -Filter "*.dll" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $packageDir -Force
+          }
+
+          # Ensure openFrameworks export DLLs are included
+          $ofExportDlls = "${{ env.OF_ROOT }}\export\vs\x64"
+          if (Test-Path $ofExportDlls) {
+            Get-ChildItem -Path $ofExportDlls -Filter "*.dll" | ForEach-Object {
+              Copy-Item -Path $_.FullName -Destination $packageDir -Force
+            }
+          }
+
+          # Ensure any Spout / addon runtime DLLs are present
+          Get-ChildItem -Path "${{ env.OF_ROOT }}\addons" -Recurse -Filter "*.dll" |
+            Where-Object { $_.FullName -match "x64|win64" -or $_.DirectoryName -notmatch "x86|Win32" } |
+            ForEach-Object {
+              Copy-Item -Path $_.FullName -Destination $packageDir -Force
+            }
+
+          Write-Host "Files in package directory:"
+          Get-ChildItem -Path $packageDir | Select-Object Name, Length
+
+          $zipName = "BMapper-windows-x64-${{ inputs.version }}.zip"
+          $zipPath = "$env:GITHUB_WORKSPACE\$zipName"
+          Write-Host "Creating archive $zipPath..."
+          Compress-Archive -Path "$packageDir\*" -DestinationPath $zipPath -Force
+
+          echo "ASSET_NAME=$zipName" >> $env:GITHUB_ENV
+          echo "ASSET_PATH=$zipPath" >> $env:GITHUB_ENV
+
+      - name: Upload Windows Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BMapper-windows-x64-${{ inputs.version }}
+          path: ${{ env.ASSET_PATH }}
+          if-no-files-found: error
+

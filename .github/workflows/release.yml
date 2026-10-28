@@ -1,0 +1,109 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version or tag (e.g. v0.3.0 or 0.3.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  check-release:
+    name: Check Version and Release Status
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version_info.outputs.version }}
+      tag: ${{ steps.version_info.outputs.tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Version and Tag
+        id: version_info
+        run: |
+          RAW_INPUT="${{ github.event.inputs.version }}"
+          # Strip leading 'v' if present to normalize version number
+          VERSION="${RAW_INPUT#v}"
+          TAG="v$VERSION"
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Provided version is empty"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Normalized version: $VERSION"
+          echo "Target git tag: $TAG"
+
+      - name: Check or create Git Tag
+        env:
+          TAG: ${{ steps.version_info.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+            echo "Tag $TAG already exists."
+          else
+            echo "Tag $TAG does not exist. Creating and pushing tag $TAG..."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+            echo "Tag $TAG created and pushed."
+          fi
+
+      - name: Check if GitHub Release already exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version_info.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists on GitHub! Aborting release process."
+            exit 1
+          fi
+          echo "No release found for $TAG. Ready to build binaries."
+
+  build-windows:
+    name: Build Windows
+    needs: check-release
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      version: ${{ needs.check-release.outputs.tag }}
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [check-release, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded_artifacts
+
+      - name: Collect release assets
+        run: |
+          mkdir -p release_assets
+          # Find all zip files from downloaded artifacts
+          find downloaded_artifacts -type f -name "*.zip" -exec cp {} release_assets/ \;
+          echo "Collected release assets:"
+          ls -lh release_assets/
+
+      - name: Publish Release to GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.check-release.outputs.tag }}
+        run: |
+          gh release create "$TAG" release_assets/* \
+            --title "BMapper $TAG" \
+            --generate-notes
+
