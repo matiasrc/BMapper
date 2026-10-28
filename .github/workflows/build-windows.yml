@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.OF_ROOT }}
-          key: of-${{ env.OF_VERSION }}-vs-v1
+          key: of-${{ env.OF_VERSION }}-vs-v2
 
       - name: Download & Extract openFrameworks
         if: steps.cache-of.outputs.cache-hit != 'true'
@@ -50,9 +50,8 @@ jobs:
           Write-Host "Downloading openFrameworks from $url..."
           Invoke-WebRequest -Uri $url -OutFile $zipPath
 
-          Write-Host "Extracting openFrameworks to temporary location..."
-          New-Item -ItemType Directory -Force -Path $extractTemp | Out-Null
-          Expand-Archive -Path $zipPath -DestinationPath $extractTemp -Force
+          Write-Host "Extracting openFrameworks with 7-Zip..."
+          7z x "$zipPath" -o"$extractTemp" -y | Out-Null
 
           # The zip contains a top-level directory (e.g. of_v0.12.0_vs_release)
           $innerFolder = Get-ChildItem -Path $extractTemp -Directory | Select-Object -First 1
@@ -66,6 +65,8 @@ jobs:
 
       - name: Fetch External Addons
         shell: pwsh
+        env:
+          GIT_TERMINAL_PROMPT: "0"
         run: |
           $addonsDir = "${{ env.OF_ROOT }}\addons"
           New-Item -ItemType Directory -Force -Path $addonsDir | Out-Null
@@ -74,7 +75,7 @@ jobs:
           Write-Host "Cloning external addons into addons directory..."
 
           if (-not (Test-Path "ofxPiMapper")) {
-            git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/matiasrc/ofxPiMapper ofxPiMapper
+            git clone --depth 1 --branch main --recurse-submodules --shallow-submodules https://github.com/matiasrc/ofxPiMapper ofxPiMapper
           }
 
           if (-not (Test-Path "ofxImGui")) {
@@ -82,14 +83,14 @@ jobs:
           }
 
           if (-not (Test-Path "ofxSpout")) {
-            git clone --depth 1 https://github.com/leadedge/ofxSpout ofxSpout
+            git clone --depth 1 https://github.com/elliotwoods/ofxSpout ofxSpout
           }
 
       - name: Place BMapper in openFrameworks apps directory
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "${{ env.OF_ROOT }}\apps\myApps" | Out-Null
-          Copy-Item -Path "$env:GITHUB_WORKSPACE\*" -Destination "${{ env.PROJECT_DIR }}" -Recurse -Force
+          New-Item -ItemType Directory -Force -Path "${{ env.PROJECT_DIR }}" | Out-Null
+          Get-ChildItem -Path "$env:GITHUB_WORKSPACE" | Copy-Item -Destination "${{ env.PROJECT_DIR }}" -Recurse -Force
 
       - name: Generate Visual Studio Solution
         shell: pwsh
@@ -102,16 +103,44 @@ jobs:
             Get-Content "addons.make"
           }
 
-          # Locate projectGenerator executable inside openFrameworks
-          $pg = (Get-ChildItem -Path "${{ env.OF_ROOT }}" -Recurse -Filter "projectGenerator.exe" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          # Ensure icon.ico exists so resource compiler (rc.exe) doesn't fail
+          if (-not (Test-Path "icon.ico")) {
+            $defaultIcon = Get-ChildItem -Path "${{ env.OF_ROOT }}" -Recurse -Filter "icon.ico" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($defaultIcon) {
+              Copy-Item -Path $defaultIcon.FullName -Destination "icon.ico" -Force
+              Write-Host "Copied default icon.ico from $($defaultIcon.FullName)"
+            }
+          }
+
+          # Locate the native C++ CLI projectGenerator executable (inside resources\app\app or commandLine)
+          $allPgs = Get-ChildItem -Path "${{ env.OF_ROOT }}" -Recurse -Filter "*projectGenerator*.exe" -ErrorAction SilentlyContinue
+          Write-Host "Found projectGenerator candidates:"
+          $allPgs | ForEach-Object { Write-Host " - $($_.FullName)" }
+
+          # Prefer the native CLI backend executable over the Electron GUI wrapper
+          $pg = ($allPgs | Where-Object { $_.FullName -match 'resources\\app\\app' -or $_.FullName -match 'commandLine' } | Select-Object -First 1).FullName
+          if (-not $pg) {
+            # Fallback: any executable NOT directly in the top-level projectGenerator directory
+            $pg = ($allPgs | Where-Object { $_.DirectoryName -notmatch 'openFrameworks\\projectGenerator$' } | Select-Object -First 1).FullName
+          }
+          if (-not $pg) {
+            $pg = ($allPgs | Select-Object -First 1).FullName
+          }
+
           if (-not $pg) {
             Write-Error "Could not find projectGenerator.exe in ${{ env.OF_ROOT }}"
             exit 1
           }
-          Write-Host "Found projectGenerator at: $pg"
+          Write-Host "Selected CLI projectGenerator: $pg"
 
-          # Execute projectGenerator for Visual Studio
+          # Execute CLI projectGenerator
+          Write-Host "Executing projectGenerator for Visual Studio..."
           & $pg -o"${{ env.OF_ROOT }}" -p"vs" "${{ env.PROJECT_DIR }}"
+
+          if (-not (Test-Path "BMapper.sln")) {
+            Write-Error "BMapper.sln was not created by projectGenerator!"
+            exit 1
+          }
           Write-Host "Visual Studio project generation complete."
 
       - name: Build BMapper (Release x64)
@@ -129,7 +158,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 
           Write-Host "Copying binary and runtime files to package directory..."
-          Copy-Item -Path "bin\BMapper.exe" -Destination $packageDir -Force
+          $exe = Get-ChildItem -Path "bin" -Filter "*.exe" | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "No executable found in bin directory after build!"
+            exit 1
+          }
+          Write-Host "Found binary: $($exe.FullName)"
+          Copy-Item -Path $exe.FullName -Destination "$packageDir\BMapper.exe" -Force
 
           # Copy data assets folder
           if (Test-Path "bin\data") {
@@ -164,14 +199,11 @@ jobs:
           Write-Host "Creating archive $zipPath..."
           Compress-Archive -Path "$packageDir\*" -DestinationPath $zipPath -Force
 
-          echo "ASSET_NAME=$zipName" >> $env:GITHUB_ENV
-          echo "ASSET_PATH=$zipPath" >> $env:GITHUB_ENV
-
       - name: Upload Windows Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BMapper-windows-x64-${{ inputs.version }}
-          path: ${{ env.ASSET_PATH }}
+          path: ${{ github.workspace }}/BMapper-windows-x64-*.zip
           if-no-files-found: error
 
       - name: Clean project directory from openFrameworks tree
