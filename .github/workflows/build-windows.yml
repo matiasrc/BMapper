@@ -26,6 +26,9 @@ jobs:
       PROJECT_DIR: "C:\\openFrameworks\\apps\\myApps\\BMapper"
 
     steps:
+      - name: Checkout BMapper
+        uses: actions/checkout@v4
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
@@ -61,15 +64,13 @@ jobs:
           Remove-Item -Path $extractTemp -Recurse -Force
           Write-Host "openFrameworks setup completed at ${{ env.OF_ROOT }}."
 
-      - name: Checkout BMapper
-        uses: actions/checkout@v4
-        with:
-          path: ${{ env.PROJECT_DIR }}
-
       - name: Fetch External Addons
         shell: pwsh
-        working-directory: ${{ env.OF_ROOT }}\addons
         run: |
+          $addonsDir = "${{ env.OF_ROOT }}\addons"
+          New-Item -ItemType Directory -Force -Path $addonsDir | Out-Null
+          Set-Location -Path $addonsDir
+
           Write-Host "Cloning external addons into addons directory..."
 
           if (-not (Test-Path "ofxPiMapper")) {
@@ -83,6 +84,12 @@ jobs:
           if (-not (Test-Path "ofxSpout")) {
             git clone --depth 1 https://github.com/leadedge/ofxSpout ofxSpout
           }
+
+      - name: Place BMapper in openFrameworks apps directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ env.OF_ROOT }}\apps\myApps" | Out-Null
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\*" -Destination "${{ env.PROJECT_DIR }}" -Recurse -Force
 
       - name: Generate Visual Studio Solution
         shell: pwsh
@@ -166,4 +173,12 @@ jobs:
           name: BMapper-windows-x64-${{ inputs.version }}
           path: ${{ env.ASSET_PATH }}
           if-no-files-found: error
+
+      - name: Clean project directory from openFrameworks tree
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path "${{ env.PROJECT_DIR }}") {
+            Remove-Item -Path "${{ env.PROJECT_DIR }}" -Recurse -Force -ErrorAction SilentlyContinue
+          }
 
