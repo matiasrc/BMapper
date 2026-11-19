@@ -1,109 +1,101 @@
-name: Create Release
+name: Create Release Draft
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version or tag (e.g. v0.3.0 or 0.3.0)"
+        description: "Release version (e.g. v0.3.0 or 0.3.0)"
         required: true
         type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-draft
+  cancel-in-progress: false
 
 jobs:
-  check-release:
-    name: Check Version and Release Status
+  version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version_info.outputs.version }}
-      tag: ${{ steps.version_info.outputs.tag }}
+      tag: ${{ steps.normalize.outputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine Version and Tag
-        id: version_info
+      - name: Validate and normalize version
+        id: normalize
+        env:
+          VERSION_INPUT: ${{ inputs.version }}
         run: |
-          RAW_INPUT="${{ github.event.inputs.version }}"
-          # Strip leading 'v' if present to normalize version number
-          VERSION="${RAW_INPUT#v}"
-          TAG="v$VERSION"
-
-          if [ -z "$VERSION" ]; then
-            echo "::error::Provided version is empty"
+          version="${VERSION_INPUT#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo '::error::Use a numeric version such as v0.3.0 or v0.3.'
             exit 1
           fi
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Normalized version: $VERSION"
-          echo "Target git tag: $TAG"
-
-      - name: Check or create Git Tag
-        env:
-          TAG: ${{ steps.version_info.outputs.tag }}
-        run: |
-          if git rev-parse "$TAG" >/dev/null 2>&1 || git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
-            echo "Tag $TAG already exists."
-          else
-            echo "Tag $TAG does not exist. Creating and pushing tag $TAG..."
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "$TAG" -m "Release $TAG"
-            git push origin "$TAG"
-            echo "Tag $TAG created and pushed."
-          fi
-
-      - name: Check if GitHub Release already exists
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.version_info.outputs.tag }}
-        run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "::error::Release $TAG already exists on GitHub! Aborting release process."
-            exit 1
-          fi
-          echo "No release found for $TAG. Ready to build binaries."
+          printf 'tag=v%s\n' "$version" >> "$GITHUB_OUTPUT"
 
   build-windows:
-    name: Build Windows
-    needs: check-release
+    needs: version
     uses: ./.github/workflows/build-windows.yml
     with:
-      version: ${{ needs.check-release.outputs.tag }}
+      version: ${{ needs.version.outputs.tag }}
 
-  publish-release:
-    name: Publish GitHub Release
-    needs: [check-release, build-windows]
+  build-macos:
+    needs: version
+    uses: ./.github/workflows/build-macos.yml
+
+  create-draft:
+    name: Create release draft with both ZIPs
+    needs: [version, build-windows, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download Windows ZIP
         uses: actions/download-artifact@v4
         with:
-          path: downloaded_artifacts
+          name: BMapper-windows-x64-${{ env.TAG }}
+          path: release-assets/windows
 
-      - name: Collect release assets
-        run: |
-          mkdir -p release_assets
-          # Find all zip files from downloaded artifacts
-          find downloaded_artifacts -type f -name "*.zip" -exec cp {} release_assets/ \;
-          echo "Collected release assets:"
-          ls -lh release_assets/
+      - name: Download macOS ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: BMapper-macos-arm64
+          path: release-assets/macos
 
-      - name: Publish Release to GitHub
+      - name: Verify packages and create draft
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.check-release.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$TAG" release_assets/* \
-            --title "BMapper $TAG" \
-            --generate-notes
+          windows="release-assets/windows/BMapper-windows-x64-$TAG.zip"
+          macos="release-assets/macos/BMapper-macos-arm64-$TAG.zip"
+          mv release-assets/macos/BMapper-macos-arm64.zip "$macos"
+          unzip -tq "$windows"
+          unzip -tq "$macos"
 
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::A release or draft already exists for $TAG."
+            exit 1
+          fi
+
+          tag_ref="refs/tags/$TAG"
+          remote_refs="$(git ls-remote origin "$tag_ref" "$tag_ref^{}")"
+          if [[ -n "$remote_refs" ]]; then
+            tag_commit="$(awk -v ref="$tag_ref" '
+              $2 == ref { direct = $1 }
+              $2 == ref "^{}" { peeled = $1 }
+              END { print (peeled ? peeled : direct) }
+            ' <<< "$remote_refs")"
+            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+              echo "::error::$TAG already points to $tag_commit, but this run built $GITHUB_SHA."
+              exit 1
+            fi
+          else
+            git push origin "$GITHUB_SHA:$tag_ref"
+          fi
+
+          gh release create "$TAG" "$windows" "$macos" \
+            --verify-tag --draft --title "BMapper $TAG" --generate-notes
