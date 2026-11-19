@@ -1,0 +1,104 @@
+name: Build macOS
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    runs-on: macos-15
+    env:
+      APP_NAME: BMapper
+      OF_VERSION: '0.12.0'
+      OFX_PI_MAPPER_REF: 5c71dbff500c9f7fcaa7bc27e72d39b43e4e18a3
+      OFX_IMGUI_REF: 7fc4e5c4679d20a7445e9e0a2ec6ff475f99079e
+      OFX_SYPHON_REF: fb2aac098f73384343edf7bea8c81cafeaf60806
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install openFrameworks
+        shell: bash
+        run: |
+          asset="of_v${OF_VERSION}_osx_release"
+          archive="$RUNNER_TEMP/$asset.zip"
+          curl --fail --location --retry 3 \
+            "https://github.com/openframeworks/openFrameworks/releases/download/$OF_VERSION/$asset.zip" \
+            --output "$archive"
+          ditto -x -k "$archive" "$RUNNER_TEMP"
+          of_root="$RUNNER_TEMP/$asset"
+          test -d "$of_root/libs/openFrameworksCompiled"
+          printf 'OF_ROOT=%s\nPROJECT_DIR=%s/apps/myApps/%s\n' \
+            "$of_root" "$of_root" "$APP_NAME" >> "$GITHUB_ENV"
+
+      - name: Install external addons
+        shell: bash
+        run: |
+          checkout_addon() {
+            local name="$1" repository="$2" revision="$3"
+            local directory="$OF_ROOT/addons/$name"
+            git init "$directory"
+            git -C "$directory" remote add origin "$repository"
+            git -C "$directory" fetch --depth 1 origin "$revision"
+            git -C "$directory" checkout --detach FETCH_HEAD
+            git -C "$directory" submodule update --init --recursive --depth 1
+          }
+
+          checkout_addon ofxPiMapper https://github.com/matiasrc/ofxPiMapper.git "$OFX_PI_MAPPER_REF"
+          checkout_addon ofxImGui https://github.com/jvcleave/ofxImGui.git "$OFX_IMGUI_REF"
+          checkout_addon ofxSyphon https://github.com/astellato/ofxSyphon.git "$OFX_SYPHON_REF"
+
+      - name: Compile Release with make
+        shell: bash
+        run: |
+          mkdir -p "$PROJECT_DIR"
+          git archive HEAD | tar -xf - -C "$PROJECT_DIR"
+          cd "$PROJECT_DIR"
+
+          # Spout is Windows-only. Preserve the remaining addon order.
+          awk '$1 != "ofxSpout"' addons.make > addons.macos
+          mv addons.macos addons.make
+          xcode-select -p
+          clang --version
+          make -j"$(sysctl -n hw.logicalcpu)" Release OF_ROOT="$OF_ROOT"
+
+      - name: Package app and data
+        shell: bash
+        run: |
+          package="$RUNNER_TEMP/$APP_NAME"
+          app="$package/$APP_NAME.app"
+          executable="$app/Contents/MacOS/$APP_NAME"
+          mkdir -p "$package"
+          ditto "$PROJECT_DIR/bin/$APP_NAME.app" "$app"
+
+          # openFrameworks 0.12.0 resolves data relative to the app bundle.
+          ditto "$PROJECT_DIR/bin/data" "$package/data"
+          mkdir -p "$app/Contents/Frameworks"
+          ditto "$OF_ROOT/addons/ofxSyphon/libs/Syphon/lib/osx/Syphon.framework" \
+            "$app/Contents/Frameworks/Syphon.framework"
+
+          # Resolve bundled frameworks whose install names use @rpath.
+          if otool -L "$executable" | awk '$1 ~ /^@rpath\// { found = 1 } END { exit !found }' &&
+             ! otool -l "$executable" | awk '
+            $1 == "cmd" { rpath = ($2 == "LC_RPATH") }
+            rpath && $1 == "path" && $2 == "@executable_path/../Frameworks" { found = 1 }
+            END { exit !found }
+          '; then
+            install_name_tool -add_rpath '@executable_path/../Frameworks' "$executable"
+          fi
+
+          lipo "$executable" -verify_arch arm64
+          lipo "$app/Contents/Frameworks/Syphon.framework/Versions/A/Syphon" -verify_arch arm64
+          plutil -lint "$app/Contents/Info.plist"
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          ditto -c -k --keepParent "$package" "$RUNNER_TEMP/$APP_NAME-macos-arm64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-macos-arm64
+          path: ${{ runner.temp }}/${{ env.APP_NAME }}-macos-arm64.zip
+          if-no-files-found: error
