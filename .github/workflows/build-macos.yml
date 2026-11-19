@@ -13,7 +13,7 @@ jobs:
     env:
       APP_NAME: BMapper
       OF_VERSION: '0.12.0'
-      OFX_PI_MAPPER_REF: 5c71dbff500c9f7fcaa7bc27e72d39b43e4e18a3
+      OFX_PI_MAPPER_REF: eff6d5c0af248d01305a178893a93357ac42e7c0
       OFX_IMGUI_REF: 7fc4e5c4679d20a7445e9e0a2ec6ff475f99079e
       OFX_SYPHON_REF: fb2aac098f73384343edf7bea8c81cafeaf60806
 
